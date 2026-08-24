@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.8.2</title>
+<title>クロ野球 Ver.8.3</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -101,7 +101,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8.2</small></header><div class="sideToast" id="sideToast"></div>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8.3</small></header><div class="sideToast" id="sideToast"></div>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -267,6 +267,15 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <button class="yellow" onclick="homerun()">本塁打</button>
     </div>
 
+    <div class="sectionTitle">走塁・バント</div>
+    <div class="grid">
+      <button class="blue" onclick="stealSuccess()">盗塁成功</button>
+      <button class="red" onclick="stealOut()">盗塁死</button>
+      <button class="gray" onclick="sacBunt()">犠牲バント</button>
+      <button class="yellow" onclick="squeezePlay()">スクイズ</button>
+    </div>
+    <p class="small">盗塁は進めたいランナーを選択。犠打・スクイズ後は必要ならランナー位置を修正できます。</p>
+
     <div class="sectionTitle">その他の出塁</div>
     <div class="grid">
       <button class="gray" onclick="reachBase('失策')">失策（エラー）</button>
@@ -285,14 +294,17 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
     <div class="sectionTitle" id="changeSectionTitle">自チームの選手交代</div>
 
     <div id="myOffenseActions">
-      <div class="small">自チーム攻撃中：代打は自チームのベンチから選びます</div>
-      <button class="yellow" onclick="openPinchHitter()">代打</button>
+      <div class="small">自チーム攻撃中</div>
+      <div class="grid">
+        <button class="yellow" onclick="openPinchHitter()">自チーム 代打</button>
+        <button class="blue" onclick="openEnemyPitcherChange()">敵 投手交代</button>
+      </div>
     </div>
 
     <div id="myDefenseActions" class="hidden">
       <div class="small">相手攻撃中：自チームは守備中です</div>
       <div class="grid">
-        <button class="blue" onclick="openPitcherChange()">投手交代</button>
+        <button class="blue" onclick="openPitcherChange()">自チーム 投手交代</button>
         <button class="gray" onclick="toggleChanges()">守備位置をまとめて変更</button>
       </div>
     </div>
@@ -566,6 +578,72 @@ function strike(){
   else log('ストライク');
   render();
 }
+
+function occupiedBaseIndexes(){
+  const a=[];
+  st.bases.forEach((r,i)=>{if(r)a.push(i)});
+  return a;
+}
+function chooseRunnerBase(message){
+  const occ=occupiedBaseIndexes();
+  if(!occ.length){ alert('ランナーがいません'); return null; }
+  const labels=occ.map(i=>(i+1)+'塁:'+st.bases[i]).join('\n');
+  const ans=prompt(message+'\n'+labels+'\n\n進めるランナーの塁を数字で入力（1〜3）');
+  if(ans===null)return null;
+  const idx=Number(ans)-1;
+  if(!occ.includes(idx)){ alert('その塁にランナーはいません'); return null; }
+  return idx;
+}
+function stealSuccess(){
+  const from=chooseRunnerBase('盗塁成功');
+  if(from===null)return;
+  if(from===2){ alert('三塁走者のホームスチールは「ホームへ（得点）」で修正してください'); return; }
+  if(st.bases[from+1]){ alert('次の塁にランナーがいます'); return; }
+  save();
+  const runner=st.bases[from];
+  st.bases[from]=null;
+  st.bases[from+1]=runner;
+  log(runner+' 盗塁成功');
+  playEvents.push({inning:st.inning,half:st.top?'表':'裏',side:st.top?'my':'opp',player:runner,result:'盗塁'});
+  render();
+}
+function stealOut(){
+  const from=chooseRunnerBase('盗塁死');
+  if(from===null)return;
+  save();
+  const runner=st.bases[from];
+  st.bases[from]=null;
+  st.o++;
+  log(runner+' 盗塁死');
+  playEvents.push({inning:st.inning,half:st.top?'表':'裏',side:st.top?'my':'opp',player:runner,result:'盗塁死'});
+  if(st.o>=3)changeSides();
+  render();
+}
+function sacBunt(){
+  save();
+  const n=currentBatterName();
+  // Default: all runners advance one base; batter is out.
+  st.lastScored=[];
+  forceOneBaseAdvance();
+  log(n+' 犠牲バント');
+  recordPlay('犠牲バント',n);
+  doOut();
+  render();
+}
+function squeezePlay(){
+  if(!st.bases[2]){ alert('三塁ランナーがいません'); return; }
+  save();
+  const n=currentBatterName();
+  const runner=st.bases[2];
+  st.bases[2]=null;
+  addRun(st.top?'my':'opp');
+  log(runner+' スクイズで生還！');
+  log(n+' スクイズ');
+  recordPlay('スクイズ',n);
+  doOut();
+  render();
+}
+
 function currentBatterName(){
   if(st.top) return players[st.batter];
   const name=oppPlayers[st.oppBatter];
@@ -866,6 +944,29 @@ function usePinchHitter(i){
   changeEvents.push(text); log(text);
   closeQuickChange(); render();
 }
+
+function openEnemyPitcherChange(){
+  if(!st.top){ alert('今は相手チームの攻撃中です。敵投手交代は自チーム攻撃中に記録します。'); return; }
+  const box=document.getElementById('quickChangePanel');
+  document.getElementById('quickChangeTitle').textContent='敵 投手交代';
+  const body=document.getElementById('quickChangeBody');
+  body.innerHTML='<div class="small">相手投手の背番号や名前が分かる範囲で入力してください</div>'+
+    '<input id="enemyPitcherNo" placeholder="新投手の背番号">'+
+    '<input id="enemyPitcherName" placeholder="新投手の名前（後からでもOK）">'+
+    '<button onclick="saveEnemyPitcherChange()">敵 投手交代を記録</button>';
+  box.classList.remove('hidden');
+}
+function saveEnemyPitcherChange(){
+  const no=(document.getElementById('enemyPitcherNo').value||'').trim();
+  const name=(document.getElementById('enemyPitcherName').value||'').trim();
+  if(!no && !name){ alert('背番号か名前を入力してください'); return; }
+  const who=(no?'#'+no+' ':'')+(name||'相手投手');
+  const text=st.inning+'回'+(st.top?'表':'裏')+'　敵 投手交代 → '+who;
+  changeEvents.push(text);
+  log(text);
+  closeQuickChange();
+}
+
 function openPitcherChange(){
   if(st.top){ alert('今は自チームの攻撃中です。自チームの投手交代は相手の攻撃中に行います。'); return; }
   const box=document.getElementById('quickChangePanel');
