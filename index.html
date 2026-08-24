@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.7.3</title>
+<title>クロ野球 Ver.8</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -85,10 +85,20 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
 .gameTheme::before{content:'';position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,var(--theme1,#176b4c) 0%,var(--themeMid,#124d39) 48%,var(--theme2,#0b2d22) 100%);transition:background .25s ease}
 body.game-active{background:var(--themeBody,#176b4c)!important}
 body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)} body.game-active #s3{background:transparent!important}
+
+.benchRow,.changeRow{display:grid;grid-template-columns:58px 1fr 86px;gap:6px;align-items:center;margin:6px 0}
+.changeRow{grid-template-columns:1fr 92px}
+.changePanel,.resultPanel{background:#151515;border:1px solid #444;border-radius:12px;padding:10px;margin:10px 0}
+.scoreTable{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+.scoreTable th,.scoreTable td{border:1px solid #444;padding:6px;text-align:center}
+.scoreTable th{background:#292929}
+.battingLine{padding:8px 4px;border-bottom:1px solid #333;font-size:13px}
+.eventLine{padding:6px 3px;border-bottom:1px solid #333;font-size:12px;color:#ddd}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.7.3</small></header><div class="sideToast" id="sideToast"></div>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8</small></header><div class="sideToast" id="sideToast"></div>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -148,6 +158,13 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div id="oppLineup"></div>
     </div>
 
+    <div class="sectionTitle">ベンチメンバー</div>
+    <div class="subCard">
+      <p class="small">代打・守備交代用。試合中にも追加できます。</p>
+      <div class="opponentHead" style="grid-template-columns:58px 1fr"><span>背番号</span><span>選手名</span></div>
+      <div id="benchLineup"></div>
+      <button class="gray" onclick="addBenchInput()">＋ ベンチ選手を追加</button>
+    </div>
     <button onclick="go3()">試合開始 →</button>
   </div>
 </section>
@@ -262,6 +279,30 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <span>二度押し防止つき</span>
     </div>
 
+    <button class="gray" onclick="toggleChanges()">選手交代・守備変更</button>
+    <div class="changePanel hidden" id="changePanel">
+      <div class="sectionTitle">現在の守備・ベンチ</div>
+      <p class="small">複数人まとめて変更して「確定」。代打もここからできます。</p>
+      <div id="changeRows"></div>
+      <button class="gray" onclick="addBenchDuringGame()">＋ ベンチ選手を追加</button>
+      <button onclick="saveChanges()">変更を確定</button>
+    </div>
+
+    <button class="yellow" onclick="finishGame()">試合終了・スコアを見る</button>
+
+    <div class="resultPanel hidden" id="resultPanel">
+      <h2>試合結果・スコア</h2>
+      <div id="finalScore"></div>
+      <div id="inningScore"></div>
+      <div class="sectionTitle">打撃結果</div>
+      <div id="battingSummary"></div>
+      <div class="sectionTitle">交代・守備変更履歴</div>
+      <div id="changeHistory"></div>
+      <div class="sectionTitle">プレー履歴</div>
+      <div id="playSummary"></div>
+      <button class="gray" onclick="closeResult()">試合画面に戻る</button>
+    </div>
+
     <button class="gray" onclick="toggleOpponentEditor()">相手メンバーを編集</button>
     <div class="subCard" id="oppEditor" style="display:none">
       <p class="small">試合後にメンバー表を見ながら名前を追加できます</p>
@@ -283,6 +324,12 @@ let positions=['遊','中','右','','','','','',''];
 let oppPlayers=['','','','','','','','',''];
 let oppNums=['','','','','','','','',''];
 let oppPositions=['','','','','','','','',''];
+let benchPlayers=[];
+let benchNums=[];
+let playEvents=[];
+let changeEvents=[];
+let inningRuns={my:{},opp:{}};
+let benchInputCount=0;
 let st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0,bases:[null,null,null],oppBatter:0,lastScored:[]};
 let stack=[];
 const posList=['','投','捕','一','二','三','遊','左','中','右','DH'];
@@ -310,6 +357,30 @@ oppPlayers.forEach((p,i)=>{
     '<select id="opos'+i+'">'+oppOptions+'</select>';
   oppLineup.appendChild(r);
 });
+
+
+function addBenchInput(no='',name=''){
+  const wrap=document.getElementById('benchLineup');
+  const i=benchInputCount++;
+  const row=document.createElement('div');
+  row.className='benchRow';
+  row.innerHTML='<input id="bn'+i+'" value="'+no+'" placeholder="#">'+
+    '<input id="bp'+i+'" value="'+name+'" placeholder="選手名">'+
+    '<span class="small">ベンチ</span>';
+  wrap.appendChild(row);
+}
+addBenchInput(); addBenchInput(); addBenchInput();
+
+function collectBench(){
+  benchPlayers=[]; benchNums=[];
+  for(let i=0;i<benchInputCount;i++){
+    const n=document.getElementById('bp'+i), no=document.getElementById('bn'+i);
+    if(n && (n.value.trim()||no.value.trim())){
+      benchPlayers.push(n.value.trim()||('背番号'+no.value.trim()));
+      benchNums.push(no.value.trim());
+    }
+  }
+}
 
 function colorPreview(){
   const mc=document.getElementById('myColor').value, mp=document.getElementById('myPantsColor').value;
@@ -386,6 +457,8 @@ function go3(){
   oppPlayers=oppPlayers.map((_,i)=>document.getElementById('op'+i).value.trim());
   oppNums=oppNums.map((_,i)=>document.getElementById('on'+i).value.trim());
   oppPositions=oppPositions.map((_,i)=>document.getElementById('opos'+i).value);
+  collectBench();
+  playEvents=[]; changeEvents=[]; inningRuns={my:{},opp:{}};
 
   const my=document.getElementById('myteam').value||'クロチーム';
   const op=document.getElementById('opp').value||'相手チーム';
@@ -406,6 +479,28 @@ function go3(){
   document.getElementById('history').innerHTML='<div>プレイボール！</div>';
   show('s3');
   render();
+}
+
+
+function inningKey(){ return String(st.inning); }
+function addRun(side,count=1){
+  if(side==='my') st.my+=count; else st.opp+=count;
+  const k=inningKey();
+  inningRuns[side][k]=(inningRuns[side][k]||0)+count;
+}
+function removeRun(side,count=1){
+  if(side==='my') st.my=Math.max(0,st.my-count); else st.opp=Math.max(0,st.opp-count);
+  const k=inningKey();
+  inningRuns[side][k]=Math.max(0,(inningRuns[side][k]||0)-count);
+}
+function recordPlay(result,player=null){
+  playEvents.push({
+    inning:st.inning,
+    half:st.top?'表':'裏',
+    side:st.top?'my':'opp',
+    player:player||currentBatterName(),
+    result:result
+  });
 }
 
 function save(){
@@ -447,6 +542,7 @@ function strikeout(kind){
   save();
   const n=currentBatterName();
   log(n+' '+kind);
+  recordPlay(kind,n);
   doOut();
   render();
 }
@@ -456,6 +552,7 @@ function recordFieldOut(){
   const pos=document.getElementById('outPos').value;
   const type=document.getElementById('outType').value;
   log(n+' '+pos+type);
+  recordPlay(pos+type,n);
   doOut();
   render();
 }
@@ -466,7 +563,7 @@ function forceOneBaseAdvance(){
       const runner=st.bases[i];
       st.bases[i]=null;
       if(i===2){
-        if(st.top)st.my++; else st.opp++;
+        addRun(st.top?'my':'opp');
         st.lastScored.push({name:runner,side:st.top?'my':'opp'});
         log(runner+' 生還！');
       }else{
@@ -482,6 +579,7 @@ function reachBase(kind){
   forceOneBaseAdvance();
   st.bases[0]=n;
   log(n+' '+kind+'で出塁');
+  recordPlay(kind+'出塁',n);
   nextBatter();
   render();
 }
@@ -493,7 +591,7 @@ function advanceDefault(bases){
       let runner=st.bases[i];
       st.bases[i]=null;
       if(dest>=4){
-        if(st.top)st.my++; else st.opp++;
+        addRun(st.top?'my':'opp');
         st.lastScored.push({name:runner,side:st.top?'my':'opp'});
         log(runner+' 生還！');
       }else st.bases[dest-1]=runner;
@@ -522,14 +620,15 @@ function homerun(){
   let runs=1;
   st.bases.forEach(x=>{if(x)runs++});
   st.bases=[null,null,null];
-  if(st.top)st.my+=runs; else st.opp+=runs;
+  addRun(st.top?'my':'opp',runs);
   log(n+' '+area+'本塁打！ '+runs+'点');
+  recordPlay(area+'本塁打',n);
   nextBatter();
   render();
 }
 function run(){
   save();
-  if(st.top)st.my++; else st.opp++;
+  addRun(st.top?'my':'opp');
   log('得点！');
   render();
 }
@@ -541,8 +640,7 @@ function restoreScoredRunner(index){
   }
   save();
   const item=st.lastScored[index];
-  if(item.side==='my' && st.my>0) st.my--;
-  if(item.side==='opp' && st.opp>0) st.opp--;
+  removeRun(item.side,1);
   st.bases[2]=item.name;
   log(item.name+' の得点を取消 → 三塁へ');
   st.lastScored.splice(index,1);
@@ -554,7 +652,7 @@ function moveRunner(from,dest){
   if(!runner)return;
   st.bases[from]=null;
   if(dest==='H'){
-    if(st.top)st.my++; else st.opp++;
+    addRun(st.top?'my':'opp');
     log(runner+' 生還！');
   }else if(dest==='O'){
     log(runner+' 走塁アウト');
@@ -689,6 +787,73 @@ function render(){
 }
 
 
+
+function allRoster(){
+  const arr=[];
+  for(let i=0;i<players.length;i++) arr.push({kind:'starter',i:i,name:players[i],no:nums[i],pos:positions[i]||'ベンチ'});
+  for(let i=0;i<benchPlayers.length;i++) arr.push({kind:'bench',i:i,name:benchPlayers[i],no:benchNums[i],pos:'ベンチ'});
+  return arr;
+}
+function toggleChanges(){
+  const box=document.getElementById('changePanel');
+  if(box.classList.contains('hidden')){
+    renderChanges(); box.classList.remove('hidden');
+  }else box.classList.add('hidden');
+}
+function renderChanges(){
+  const wrap=document.getElementById('changeRows'); wrap.innerHTML='';
+  const roster=allRoster();
+  roster.forEach((r,idx)=>{
+    const row=document.createElement('div'); row.className='changeRow';
+    const label=(r.no?'#'+r.no+' ':'')+r.name;
+    const opts=['投','捕','一','二','三','遊','左','中','右','DH','代打','ベンチ']
+      .map(x=>'<option '+(x===r.pos?'selected':'')+'>'+x+'</option>').join('');
+    row.innerHTML='<span>'+label+'</span><select id="chg'+idx+'">'+opts+'</select>';
+    wrap.appendChild(row);
+  });
+}
+function addBenchDuringGame(){
+  const no=prompt('背番号（分からなければ空欄）')||'';
+  const name=prompt('選手名')||'';
+  if(!name && !no)return;
+  benchNums.push(no); benchPlayers.push(name||('背番号'+no));
+  renderChanges();
+}
+function saveChanges(){
+  const roster=allRoster();
+  const changes=[];
+  roster.forEach((r,idx)=>{
+    const sel=document.getElementById('chg'+idx); if(!sel)return;
+    const np=sel.value, old=r.pos;
+    if(np!==old){
+      const label=(r.no?'#'+r.no+' ':'')+r.name;
+      changes.push(label+' '+old+'→'+np);
+      if(r.kind==='starter') positions[r.i]=np;
+      // Bench players entering defense or pinch hitting swap into the relevant batting slot only when user chooses 代打.
+      if(r.kind==='bench' && np==='代打'){
+        const slot=st.batter;
+        const oldName=players[slot], oldNo=nums[slot], oldPos=positions[slot];
+        players[slot]=r.name; nums[slot]=r.no; positions[slot]='代打';
+        benchPlayers[r.i]=oldName; benchNums[r.i]=oldNo;
+        changes.push('打順'+(slot+1)+'番 '+oldName+'→'+r.name+'（代打）');
+      }else if(r.kind==='bench' && np!=='ベンチ' && np!=='代打'){
+        // Allow grass-roots flexible entry: add new player to the current batting slot if it is the simplest usable mapping.
+        const slot=st.batter;
+        const oldName=players[slot], oldNo=nums[slot], oldPos=positions[slot];
+        players[slot]=r.name; nums[slot]=r.no; positions[slot]=np;
+        benchPlayers[r.i]=oldName; benchNums[r.i]=oldNo;
+        changes.push('打順'+(slot+1)+'番 '+oldName+'→'+r.name+'（'+np+'）');
+      }
+    }
+  });
+  if(changes.length){
+    const text=st.inning+'回'+(st.top?'表':'裏')+'　'+changes.join('／');
+    changeEvents.push(text); log('選手変更：'+changes.join('／'));
+  }
+  document.getElementById('changePanel').classList.add('hidden');
+  render();
+}
+
 function toggleOpponentEditor(){
   const box=document.getElementById('oppEditor');
   if(box.style.display==='none'){
@@ -723,6 +888,49 @@ function saveOpponentEditor(){
   log('相手メンバー表を更新');
   render();
   document.getElementById('oppEditor').style.display='none';
+}
+
+
+function finishGame(){
+  renderResult();
+  document.getElementById('resultPanel').classList.remove('hidden');
+  document.getElementById('resultPanel').scrollIntoView({behavior:'smooth'});
+}
+function closeResult(){ document.getElementById('resultPanel').classList.add('hidden'); }
+function renderResult(){
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+  document.getElementById('finalScore').innerHTML='<div class="big">'+my+' '+st.my+' − '+st.opp+' '+op+'</div>';
+
+  let maxInn=st.inning;
+  let head='<tr><th>TEAM</th>';
+  for(let i=1;i<=maxInn;i++)head+='<th>'+i+'</th>';
+  head+='<th>計</th></tr>';
+  let mr='<tr><th>'+my+'</th>', or='<tr><th>'+op+'</th>';
+  for(let i=1;i<=maxInn;i++){
+    mr+='<td>'+(inningRuns.my[String(i)]||0)+'</td>';
+    or+='<td>'+(inningRuns.opp[String(i)]||0)+'</td>';
+  }
+  mr+='<td><b>'+st.my+'</b></td></tr>'; or+='<td><b>'+st.opp+'</b></td></tr>';
+  document.getElementById('inningScore').innerHTML='<table class="scoreTable">'+head+mr+or+'</table>';
+
+  const byPlayer={};
+  playEvents.filter(e=>e.side==='my').forEach(e=>{
+    (byPlayer[e.player]||(byPlayer[e.player]=[])).push(e.result);
+  });
+  let batting='';
+  Object.keys(byPlayer).forEach(name=>{
+    batting+='<div class="battingLine"><b>'+name+'</b>　'+byPlayer[name].join(' ｜ ')+'</div>';
+  });
+  document.getElementById('battingSummary').innerHTML=batting||'<div class="small">記録なし</div>';
+
+  document.getElementById('changeHistory').innerHTML=changeEvents.length
+    ?changeEvents.map(x=>'<div class="eventLine">'+x+'</div>').join('')
+    :'<div class="small">交代・守備変更なし</div>';
+
+  document.getElementById('playSummary').innerHTML=playEvents.length
+    ?playEvents.map(e=>'<div class="eventLine">'+e.inning+'回'+e.half+'　'+e.player+'　'+e.result+'</div>').join('')
+    :'<div class="small">記録なし</div>';
 }
 
 // --- タップ感 & 二度押し防止 ---
