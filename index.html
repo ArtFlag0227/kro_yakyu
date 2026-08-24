@@ -27,10 +27,11 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
 .status b{display:block;font-size:25px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid button{margin:0}
-.red{background:#9b2c2c}.gray{background:#555}.yellow{background:#8a6d00}
-.history{margin-top:16px;max-height:180px;overflow:auto;background:#151515;border-radius:10px;padding:10px;font-size:14px}
+.red{background:#9b2c2c}.gray{background:#555}.yellow{background:#8a6d00}.blue{background:#245f8f}.purple{background:#6b3f8f}
+.history{margin-top:16px;max-height:220px;overflow:auto;background:#151515;border-radius:10px;padding:10px;font-size:14px}
 .history div{padding:6px;border-bottom:1px solid #333}
 .small{font-size:14px;color:#bbb;text-align:center;margin-top:8px}
+.sectionTitle{margin:18px 0 8px;font-weight:800;color:#ddd}
 </style>
 </head>
 <body>
@@ -75,14 +76,23 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
       <span>アウト<b id="outs">0</b></span>
     </div>
 
+    <div class="sectionTitle">カウント・アウト</div>
     <div class="grid">
       <button onclick="ball()">ボール</button>
       <button class="yellow" onclick="strike()">ストライク</button>
-      <button onclick="hit()">ヒット</button>
-      <button onclick="run()">得点 ＋1</button>
       <button class="red" onclick="out()">アウト</button>
       <button class="gray" onclick="undo()">ひとつ戻す</button>
     </div>
+
+    <div class="sectionTitle">打撃結果</div>
+    <div class="grid">
+      <button onclick="hit('単打')">単打</button>
+      <button class="blue" onclick="hit('二塁打')">二塁打</button>
+      <button class="purple" onclick="hit('三塁打')">三塁打</button>
+      <button class="yellow" onclick="homerun()">本塁打</button>
+    </div>
+
+    <button onclick="run()">得点 ＋1</button>
 
     <div class="history" id="history"><div>プレイボール！</div></div>
     <button class="red" onclick="resetGame()">試合をリセット</button>
@@ -155,9 +165,18 @@ function strike(){
   }
   render();
 }
-function hit(){
+function hit(kind){
   save();
-  log(players[st.batter]+' ヒット！');
+  log(players[st.batter]+' '+kind);
+  nextBatter();
+  render();
+}
+function homerun(){
+  save();
+  const name=players[st.batter];
+  if(st.top) st.my++;
+  else st.opp++;
+  log(name+' 本塁打！ +1点');
   nextBatter();
   render();
 }
