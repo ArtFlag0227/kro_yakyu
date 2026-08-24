@@ -66,6 +66,15 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
 .uniformColors label{font-size:11px;color:#aaa}
 .uniformColors input[type=color]{height:38px;padding:3px}
 @media(max-width:480px){header{padding:12px;font-size:18px}.lineupHead,.lineupRow{grid-template-columns:34px 52px 1fr 68px;gap:4px}.lineupRow input,.lineupRow select{font-size:13px;padding:8px 5px}.scoreboard{font-size:13px}.scoreNum{font-size:28px}.teamBadge{font-size:12px;padding:7px 3px}.player{font-size:13px;padding:10px}.runnerPanel{padding:8px}.runnerRow{gap:5px}.runnerRow select{font-size:12px;padding:7px}}
+.subCard{background:#171717;border:1px solid #333;border-radius:10px;padding:9px;margin:9px 0}
+.opponentRow{display:grid;grid-template-columns:38px 58px 1fr;gap:5px;align-items:center;margin:6px 0}
+.opponentHead{display:grid;grid-template-columns:38px 58px 1fr;gap:5px;color:#aaa;font-size:11px;text-align:center}
+.hitLocationBox{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
+.tapBtn{transition:transform .07s ease,filter .07s ease;touch-action:manipulation}
+.tapBtn.pressed{transform:scale(.96);filter:brightness(1.28)}
+.feedbackRow{display:flex;gap:8px;align-items:center;justify-content:center;margin:7px 0;font-size:12px;color:#aaa}
+.feedbackRow label{display:flex;gap:5px;align-items:center}
+.feedbackRow input{width:auto}
 </style>
 </head>
 <body>
@@ -121,6 +130,14 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
     <p class="small">背番号・選手名・守備位置を入力できます</p>
     <div class="lineupHead"><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span></div>
     <div id="lineup"></div>
+
+    <div class="sectionTitle">相手スタメン</div>
+    <div class="subCard">
+      <p class="small">試合前は背番号だけでもOK。名前は後から入力できます。</p>
+      <div class="opponentHead"><span>打順</span><span>背番号</span><span>選手名（任意）</span></div>
+      <div id="oppLineup"></div>
+    </div>
+
     <button onclick="go3()">試合開始 →</button>
   </div>
 </section>
@@ -194,6 +211,25 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
     </div>
 
     <div class="sectionTitle">打撃結果</div>
+    <div class="hitLocationBox">
+      <select id="hitArea">
+        <option value="左前">レフト前</option>
+        <option value="中前" selected>センター前</option>
+        <option value="右前">ライト前</option>
+        <option value="左越">レフトオーバー</option>
+        <option value="中越">センターオーバー</option>
+        <option value="右越">ライトオーバー</option>
+        <option value="左線">レフト線</option>
+        <option value="右線">ライト線</option>
+        <option value="内野">内野</option>
+      </select>
+      <select id="hitDetail">
+        <option value="">方向のみ</option>
+        <option value="ゴロ">ゴロ</option>
+        <option value="ライナー">ライナー</option>
+        <option value="フライ">フライ</option>
+      </select>
+    </div>
     <div class="grid">
       <button onclick="hit('単打')">単打</button>
       <button class="blue" onclick="hit('二塁打')">二塁打</button>
@@ -210,6 +246,19 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
     <button onclick="run()">得点 ＋1</button>
     <button class="gray" onclick="undo()">ひとつ戻す</button>
 
+    <div class="feedbackRow">
+      <label><input type="checkbox" id="soundOn" checked> タップ音</label>
+      <span>・</span>
+      <span>二度押し防止つき</span>
+    </div>
+
+    <button class="gray" onclick="toggleOpponentEditor()">相手メンバーを編集</button>
+    <div class="subCard" id="oppEditor" style="display:none">
+      <p class="small">試合後にメンバー表を見ながら名前を追加できます</p>
+      <div id="oppEditorRows"></div>
+      <button onclick="saveOpponentEditor()">相手メンバーを保存</button>
+    </div>
+
     <div class="history" id="history"><div>プレイボール！</div></div>
     <button class="red" onclick="resetGame()">試合をリセット</button>
   </div>
@@ -221,6 +270,8 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
 let players=['山田','佐藤','鈴木','','','','','',''];
 let nums=['1','2','3','','','','','',''];
 let positions=['遊','中','右','','','','','',''];
+let oppPlayers=['','','','','','','','',''];
+let oppNums=['','','','','','','','',''];
 let st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0,bases:[null,null,null],oppBatter:0};
 let stack=[];
 const posList=['','投','捕','一','二','三','遊','左','中','右','DH'];
@@ -236,6 +287,15 @@ players.forEach((p,i)=>{
     '<input id="p'+i+'" value="'+p+'" placeholder="選手名">'+
     '<select id="pos'+i+'">'+options+'</select>';
   lineup.appendChild(r);
+});
+const oppLineup=document.getElementById('oppLineup');
+oppPlayers.forEach((p,i)=>{
+  const r=document.createElement('div');
+  r.className='opponentRow';
+  r.innerHTML='<div class="order">'+(i+1)+'番</div>'+
+    '<input id="on'+i+'" value="'+oppNums[i]+'" placeholder="#">'+
+    '<input id="op'+i+'" value="'+p+'" placeholder="名前は後からでもOK">';
+  oppLineup.appendChild(r);
 });
 
 function colorPreview(){
@@ -261,6 +321,8 @@ function go3(){
   players=players.map((_,i)=>document.getElementById('p'+i).value.trim()||('選手'+(i+1)));
   nums=nums.map((_,i)=>document.getElementById('n'+i).value.trim());
   positions=positions.map((_,i)=>document.getElementById('pos'+i).value);
+  oppPlayers=oppPlayers.map((_,i)=>document.getElementById('op'+i).value.trim());
+  oppNums=oppNums.map((_,i)=>document.getElementById('on'+i).value.trim());
 
   const my=document.getElementById('myteam').value||'クロチーム';
   const op=document.getElementById('opp').value||'相手チーム';
@@ -310,7 +372,12 @@ function strike(){
   render();
 }
 function currentBatterName(){
-  return st.top ? players[st.batter] : ('相手 '+(st.oppBatter+1)+'番');
+  if(st.top) return players[st.batter];
+  const name=oppPlayers[st.oppBatter];
+  const no=oppNums[st.oppBatter];
+  if(name) return name;
+  if(no) return '相手 #'+no;
+  return '相手 '+(st.oppBatter+1)+'番';
 }
 
 function strikeout(kind){
@@ -371,20 +438,23 @@ function hit(kind){
   save();
   const n=currentBatterName();
   const bases=kind==='単打'?1:kind==='二塁打'?2:3;
+  const area=document.getElementById('hitArea').value;
+  const detail=document.getElementById('hitDetail').value;
   advanceDefault(bases);
   st.bases[bases-1]=n;
-  log(n+' '+kind);
+  log(n+' '+area+(detail?detail:'')+' '+kind);
   nextBatter();
   render();
 }
 function homerun(){
   save();
   const n=currentBatterName();
+  const area=document.getElementById('hitArea').value.replace('前','越');
   let runs=1;
   st.bases.forEach(x=>{if(x)runs++});
   st.bases=[null,null,null];
   if(st.top)st.my+=runs; else st.opp+=runs;
-  log(n+' 本塁打！ '+runs+'点');
+  log(n+' '+area+'本塁打！ '+runs+'点');
   nextBatter();
   render();
 }
@@ -470,7 +540,9 @@ function render(){
   if(st.top){
     document.getElementById('batter').textContent=(st.batter+1)+'番　'+no+players[st.batter]+ps;
   }else{
-    document.getElementById('batter').textContent=(st.oppBatter+1)+'番　相手打者';
+    const on=oppNums[st.oppBatter]?'背番号 '+oppNums[st.oppBatter]+'　':'';
+    const opn=oppPlayers[st.oppBatter]||'相手打者';
+    document.getElementById('batter').textContent=(st.oppBatter+1)+'番　'+on+opn;
   }
 
   for(let i=0;i<3;i++){
@@ -493,6 +565,74 @@ function render(){
   });
   if(!rc.children.length)rc.innerHTML='<div class="small">ランナーなし</div>';
 }
+
+
+function toggleOpponentEditor(){
+  const box=document.getElementById('oppEditor');
+  if(box.style.display==='none'){
+    renderOpponentEditor();
+    box.style.display='block';
+  }else box.style.display='none';
+}
+function renderOpponentEditor(){
+  const wrap=document.getElementById('oppEditorRows');
+  wrap.innerHTML='';
+  for(let i=0;i<9;i++){
+    const row=document.createElement('div');
+    row.className='opponentRow';
+    row.innerHTML='<div class="order">'+(i+1)+'番</div>'+
+      '<input id="eon'+i+'" value="'+(oppNums[i]||'')+'" placeholder="#">'+
+      '<input id="eop'+i+'" value="'+(oppPlayers[i]||'')+'" placeholder="選手名">';
+    wrap.appendChild(row);
+  }
+}
+function saveOpponentEditor(){
+  for(let i=0;i<9;i++){
+    oppNums[i]=document.getElementById('eon'+i).value.trim();
+    oppPlayers[i]=document.getElementById('eop'+i).value.trim();
+    const on=document.getElementById('on'+i), op=document.getElementById('op'+i);
+    if(on)on.value=oppNums[i];
+    if(op)op.value=oppPlayers[i];
+  }
+  log('相手メンバー表を更新');
+  render();
+  document.getElementById('oppEditor').style.display='none';
+}
+
+// --- タップ感 & 二度押し防止 ---
+let audioCtx=null;
+function tapFeedback(ev){
+  const btn=ev && ev.currentTarget ? ev.currentTarget : null;
+  if(btn){
+    btn.classList.add('pressed');
+    setTimeout(()=>btn.classList.remove('pressed'),90);
+  }
+  if(navigator.vibrate) navigator.vibrate(18);
+  const sound=document.getElementById('soundOn');
+  if(sound && sound.checked){
+    try{
+      audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.frequency.value=520; g.gain.value=.045;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.055);
+      o.stop(audioCtx.currentTime+.06);
+    }catch(e){}
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('button').forEach(btn=>{
+    btn.classList.add('tapBtn');
+    btn.addEventListener('click',tapFeedback,{capture:true});
+    btn.addEventListener('click',()=>{
+      if(btn.dataset.locked==='1') return;
+      btn.dataset.locked='1';
+      btn.disabled=true;
+      setTimeout(()=>{btn.disabled=false;btn.dataset.locked='0'},260);
+    });
+  });
+});
+
 </script>
 </body>
 </html>
