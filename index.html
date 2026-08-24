@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.8.3</title>
+<title>クロ野球 Ver.8.4</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -101,7 +101,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8.3</small></header><div class="sideToast" id="sideToast"></div>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8.4</small></header><div class="sideToast" id="sideToast"></div>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -208,6 +208,8 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
     <div class="runnerPanel" id="runnerPanel">
       <div class="small">ヒット後、必要なら走者の進塁先を変更できます</div>
       <div id="runnerControls"></div><div id="scoreCorrections"></div>
+      <button class="gray" onclick="openBaseEditor()">ランナー最終位置を修正</button>
+      <div class="changePanel hidden" id="baseEditor"></div>
     </div>
 
     <div class="status">
@@ -275,6 +277,18 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <button class="yellow" onclick="squeezePlay()">スクイズ</button>
     </div>
     <p class="small">盗塁は進めたいランナーを選択。犠打・スクイズ後は必要ならランナー位置を修正できます。</p>
+
+    <div class="sectionTitle">イレギュラープレー</div>
+    <div class="grid">
+      <button class="gray" onclick="openBuntResult()">バント結果を選ぶ</button>
+      <button class="gray" onclick="openStealResult()">盗塁結果を選ぶ</button>
+    </div>
+
+    <div class="changePanel hidden" id="irregularPanel">
+      <div class="sectionTitle" id="irregularTitle"></div>
+      <div id="irregularBody"></div>
+      <button class="gray" onclick="closeIrregular()">閉じる</button>
+    </div>
 
     <div class="sectionTitle">その他の出塁</div>
     <div class="grid">
@@ -642,6 +656,166 @@ function squeezePlay(){
   recordPlay('スクイズ',n);
   doOut();
   render();
+}
+
+
+function closeIrregular(){
+  document.getElementById('irregularPanel').classList.add('hidden');
+}
+function openBuntResult(){
+  const box=document.getElementById('irregularPanel');
+  document.getElementById('irregularTitle').textContent='バント結果';
+  const body=document.getElementById('irregularBody');
+  body.innerHTML=
+    '<div class="grid">'+
+      '<button onclick="buntOutcome(\'sac\')">犠打成功</button>'+
+      '<button onclick="buntOutcome(\'hit\')">バントヒット</button>'+
+      '<button onclick="buntOutcome(\'error\')">失策で出塁</button>'+
+      '<button onclick="buntOutcome(\'fc\')">野選で出塁</button>'+
+      '<button class="red" onclick="buntOutcome(\'out\')">バント失敗アウト</button>'+
+      '<button class="yellow" onclick="buntOutcome(\'squeezeHit\')">スクイズ内野安打</button>'+
+    '</div>';
+  box.classList.remove('hidden');
+}
+function buntOutcome(kind){
+  save();
+  const n=currentBatterName();
+  st.lastScored=[];
+  if(kind==='sac'){
+    forceOneBaseAdvance();
+    log(n+' 犠打成功');
+    recordPlay('犠打成功',n);
+    doOut();
+  }else if(kind==='hit'){
+    advanceDefault(1);
+    st.bases[0]=n;
+    log(n+' バントヒット');
+    recordPlay('バントヒット',n);
+    nextBatter();
+  }else if(kind==='error'){
+    forceOneBaseAdvance();
+    st.bases[0]=n;
+    log(n+' バント・失策で出塁');
+    recordPlay('バント失策出塁',n);
+    nextBatter();
+  }else if(kind==='fc'){
+    forceOneBaseAdvance();
+    st.bases[0]=n;
+    log(n+' バント・野選で出塁');
+    recordPlay('バント野選出塁',n);
+    nextBatter();
+  }else if(kind==='out'){
+    log(n+' バント失敗アウト');
+    recordPlay('バント失敗アウト',n);
+    doOut();
+  }else if(kind==='squeezeHit'){
+    if(st.bases[2]){
+      const runner=st.bases[2];
+      st.bases[2]=null;
+      addRun(st.top?'my':'opp');
+      log(runner+' スクイズで生還！');
+    }
+    advanceDefault(1);
+    st.bases[0]=n;
+    log(n+' スクイズ内野安打');
+    recordPlay('スクイズ内野安打',n);
+    nextBatter();
+  }
+  closeIrregular();
+  render();
+}
+
+function openStealResult(){
+  const from=chooseRunnerBase('盗塁プレー');
+  if(from===null)return;
+  const box=document.getElementById('irregularPanel');
+  document.getElementById('irregularTitle').textContent='盗塁結果';
+  const body=document.getElementById('irregularBody');
+  body.innerHTML=
+    '<div class="grid">'+
+      '<button onclick="stealOutcome('+from+',\'success\')">盗塁成功</button>'+
+      '<button class="red" onclick="stealOutcome('+from+',\'out\')">盗塁死</button>'+
+      '<button class="yellow" onclick="stealOutcome('+from+',\'errorNext\')">悪送球でさらに進塁</button>'+
+      '<button class="yellow" onclick="stealOutcome('+from+',\'home\')">悪送球でホームまで</button>'+
+    '</div>';
+  box.classList.remove('hidden');
+}
+function stealOutcome(from,kind){
+  if(!st.bases[from]){ closeIrregular(); return; }
+  save();
+  const runner=st.bases[from];
+  st.bases[from]=null;
+  if(kind==='success'){
+    const dest=from+1;
+    if(dest<=2 && !st.bases[dest]){
+      st.bases[dest]=runner;
+      log(runner+' 盗塁成功');
+      recordPlay('盗塁',runner);
+    }else{
+      st.bases[from]=runner;
+      alert('進塁先にランナーがいます');
+    }
+  }else if(kind==='out'){
+    st.o++;
+    log(runner+' 盗塁死');
+    recordPlay('盗塁死',runner);
+    if(st.o>=3)changeSides();
+  }else if(kind==='errorNext'){
+    const dest=Math.min(2,from+2);
+    if(!st.bases[dest]){
+      st.bases[dest]=runner;
+      log(runner+' 盗塁＋悪送球で'+(dest+1)+'塁へ');
+      recordPlay('盗塁＋悪送球',runner);
+    }else{
+      st.bases[from]=runner;
+      alert('進塁先にランナーがいます');
+    }
+  }else if(kind==='home'){
+    addRun(st.top?'my':'opp');
+    log(runner+' 盗塁＋悪送球で生還！');
+    recordPlay('盗塁＋悪送球で得点',runner);
+  }
+  closeIrregular();
+  render();
+}
+
+function openBaseEditor(){
+  const box=document.getElementById('baseEditor');
+  box.classList.remove('hidden');
+  const all=[];
+  st.bases.forEach((r,i)=>{if(r)all.push(r)});
+  let html='<div class="sectionTitle">ランナー最終位置</div><div class="small">現在塁上にいるランナーを自由に置き直せます</div>';
+  html+='<div class="field"><label>一塁</label><select id="editB1"><option value="">空</option>';
+  all.forEach(r=>html+='<option '+(st.bases[0]===r?'selected':'')+'>'+r+'</option>');
+  html+='</select></div>';
+  html+='<div class="field"><label>二塁</label><select id="editB2"><option value="">空</option>';
+  all.forEach(r=>html+='<option '+(st.bases[1]===r?'selected':'')+'>'+r+'</option>');
+  html+='</select></div>';
+  html+='<div class="field"><label>三塁</label><select id="editB3"><option value="">空</option>';
+  all.forEach(r=>html+='<option '+(st.bases[2]===r?'selected':'')+'>'+r+'</option>');
+  html+='</select></div>';
+  html+='<button onclick="saveBaseEditor()">この配置で確定</button><button class="gray" onclick="closeBaseEditor()">閉じる</button>';
+  box.innerHTML=html;
+}
+function saveBaseEditor(){
+  const vals=[
+    document.getElementById('editB1').value,
+    document.getElementById('editB2').value,
+    document.getElementById('editB3').value
+  ];
+  const used=vals.filter(Boolean);
+  if(new Set(used).size!==used.length){
+    alert('同じランナーを複数の塁には置けません');
+    return;
+  }
+  save();
+  st.bases=vals.map(v=>v||null);
+  log('ランナー最終位置を修正');
+  closeBaseEditor();
+  render();
+}
+function closeBaseEditor(){
+  document.getElementById('baseEditor').classList.add('hidden');
 }
 
 function currentBatterName(){
