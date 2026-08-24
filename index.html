@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.9.4</title>
+<title>クロ野球 Ver.9.6</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -167,12 +167,42 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 #runnerActionPanel.show{display:block!important}
 .runnerActionGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .runnerActionGrid button{margin:0}
+
+/* Ver.9.5: screen switching must always be exclusive */
+.screen{display:none!important}
+.screen.active{display:block!important}
+#runnerActionPanel.hidden{display:none!important}
+#runnerActionPanel.show:not(.hidden){display:block!important}
+
 </style>
 </head>
 <body>
-<div class="uniformColors">
-            <label>上（シャツ）<input type="color" id="myColor" value="#0b8f68" oninput="colorPreview()"></label>
-            <label>下（パンツ）<input type="color" id="myPantsColor" value="#ffffff" oninput="colorPreview()"></label>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.9.6</small></header>
+<main id="appMain">
+
+<section id="s1" class="screen active">
+  <div class="card">
+    <h2>① 試合設定</h2>
+
+    <div class="teamSetup" id="mySetup" style="--tc:#0b8f68">
+      <div class="field">
+        <label>自チーム</label>
+        <input id="myteam" value="クロチーム">
+      </div>
+      <div class="field">
+        <label>ユニフォーム色（上下）</label>
+        <div class="uniformPreview">
+          <div class="uniformPerson">
+            <div class="jersey" id="myJersey"></div>
+            <div class="pants" id="myPants"></div>
+          </div>
+          <div class="uniformColors">
+            <label>上（シャツ）
+              <input type="color" id="myColor" value="#0b8f68" oninput="colorPreview()">
+            </label>
+            <label>下（パンツ）
+              <input type="color" id="myPantsColor" value="#ffffff" oninput="colorPreview()">
+            </label>
           </div>
         </div>
       </div>
@@ -186,16 +216,27 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div class="field">
         <label>ユニフォーム色（上下）</label>
         <div class="uniformPreview">
-          <div class="uniformPerson"><div class="jersey" id="oppJersey"></div><div class="pants" id="oppPants"></div></div>
+          <div class="uniformPerson">
+            <div class="jersey" id="oppJersey"></div>
+            <div class="pants" id="oppPants"></div>
+          </div>
           <div class="uniformColors">
-            <label>上（シャツ）<input type="color" id="oppColor" value="#b23a3a" oninput="colorPreview()"></label>
-            <label>下（パンツ）<input type="color" id="oppPantsColor" value="#d9d9d9" oninput="colorPreview()"></label>
+            <label>上（シャツ）
+              <input type="color" id="oppColor" value="#b23a3a" oninput="colorPreview()">
+            </label>
+            <label>下（パンツ）
+              <input type="color" id="oppPantsColor" value="#d9d9d9" oninput="colorPreview()">
+            </label>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="field"><label>球場</label><input id="field" value="〇〇グラウンド"></div>
+    <div class="field">
+      <label>球場</label>
+      <input id="field" value="〇〇グラウンド">
+    </div>
+
     <button onclick="go2()">スタメンへ →</button>
   </div>
 </section>
@@ -432,6 +473,16 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </main>
 
 <script>
+
+function kroShowScreen(targetId){
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  const target=document.getElementById(targetId);
+  if(target){
+    target.classList.add('active');
+    window.scrollTo({top:0,behavior:'auto'});
+  }
+}
+
 let players=['山田','佐藤','鈴木','','','','','',''];
 let nums=['1','2','3','','','','','',''];
 let positions=['遊','中','右','','','','','',''];
