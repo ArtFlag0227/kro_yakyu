@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.9.3</title>
+<title>クロ野球 Ver.9.4</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -157,33 +157,20 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 .runnerSheetTitle{text-align:center;font-size:18px;font-weight:900;margin:5px 0 12px}
 .runnerActionGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .runnerActionGrid button{margin:0}
+
+#runnerActionPanel{
+  margin:8px 0 12px;
+  border:2px solid #ffffff55;
+  background:#121212;
+  box-shadow:0 6px 18px #0008;
+}
+#runnerActionPanel.show{display:block!important}
+.runnerActionGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.runnerActionGrid button{margin:0}
 </style>
 </head>
 <body>
-<div id="runnerSheetBackdrop" class="runnerSheetBackdrop" onclick="closeRunnerSheet()"></div>
-<div id="runnerSheet" class="runnerSheet">
-  <div class="runnerSheetHandle"></div>
-  <div class="runnerSheetTitle" id="runnerSheetTitle">ランナー操作</div>
-  <div id="runnerSheetButtons"></div>
-  <button class="gray" onclick="closeRunnerSheet()">閉じる</button>
-</div>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.9.3</small></header><div class="sideToast" id="sideToast"></div>
-<main id="appMain">
-
-<section id="s1" class="screen active">
-  <div class="card">
-    <h2>① 試合設定</h2>
-
-    <div class="teamSetup" id="mySetup" style="--tc:#0b8f68">
-      <div class="field">
-        <label>自チーム</label>
-        <input id="myteam" value="クロチーム">
-      </div>
-      <div class="field">
-        <label>ユニフォーム色（上下）</label>
-        <div class="uniformPreview">
-          <div class="uniformPerson"><div class="jersey" id="myJersey"></div><div class="pants" id="myPants"></div></div>
-          <div class="uniformColors">
+<div class="uniformColors">
             <label>上（シャツ）<input type="color" id="myColor" value="#0b8f68" oninput="colorPreview()"></label>
             <label>下（パンツ）<input type="color" id="myPantsColor" value="#ffffff" oninput="colorPreview()"></label>
           </div>
@@ -270,9 +257,15 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div class="base b3" id="base3"><span id="base3txt">三塁</span></div>
       <div class="base b1" id="base1"><span id="base1txt">一塁</span></div>
 
-      <button type="button" class="baseTap bt2" id="baseTap2" onclick="runnerTap(1)"></button>
-      <button type="button" class="baseTap bt3" id="baseTap3" onclick="runnerTap(2)"></button>
-      <button type="button" class="baseTap bt1" id="baseTap1" onclick="runnerTap(0)"></button>
+      <button type="button" class="baseTap bt2" id="baseTap2" onclick="runnerTap(1);return false;"></button>
+      <button type="button" class="baseTap bt3" id="baseTap3" onclick="runnerTap(2);return false;"></button>
+      <button type="button" class="baseTap bt1" id="baseTap1" onclick="runnerTap(0);return false;"></button>
+    </div>
+
+    <div class="changePanel hidden" id="runnerActionPanel">
+      <div class="sectionTitle" id="runnerActionTitle">ランナー操作</div>
+      <div id="runnerActionButtons"></div>
+      <button class="gray" onclick="closeRunnerActionPanel()">閉じる</button>
     </div>
 
     <div class="runnerPanel" id="runnerPanel">
@@ -826,55 +819,66 @@ function runnerTap(from){
   if(!runner)return;
 
   selectedRunnerBase=from;
-  document.getElementById('runnerSheetTitle').textContent=
-    (from+1)+'塁　'+runner;
+  const panel=document.getElementById('runnerActionPanel');
+  const title=document.getElementById('runnerActionTitle');
+  const body=document.getElementById('runnerActionButtons');
+
+  title.textContent=(from+1)+'塁　'+runner+' の走塁';
 
   let html='<div class="runnerActionGrid">';
 
   if(from<2){
-    html+='<button class="blue" onclick="runnerSheetAction(\'steal\')">盗塁 → '+(from+2)+'塁</button>';
-    html+='<button class="yellow" onclick="runnerSheetAction(\'advance1\')">悪送球など → '+(from+2)+'塁</button>';
+    html+='<button class="blue" onclick="runnerAction(\'steal\')">盗塁 → '+(from+2)+'塁</button>';
+    html+='<button class="yellow" onclick="runnerAction(\'advance1\')">悪送球など → '+(from+2)+'塁</button>';
   }
   if(from===0){
-    html+='<button class="yellow" onclick="runnerSheetAction(\'advance2\')">一気に三塁へ</button>';
+    html+='<button class="yellow" onclick="runnerAction(\'advance2\')">一気に三塁へ</button>';
   }
 
-  html+='<button onclick="runnerSheetAction(\'home\')">ホームへ（得点）</button>';
-  html+='<button class="red" onclick="runnerSheetAction(\'stealOut\')">盗塁死</button>';
-  html+='<button class="red" onclick="runnerSheetAction(\'pickoff\')">牽制アウト</button>';
-  html+='<button class="red" onclick="runnerSheetAction(\'runOut\')">走塁アウト</button>';
+  html+='<button onclick="runnerAction(\'home\')">ホームへ（得点）</button>';
+  html+='<button class="red" onclick="runnerAction(\'stealOut\')">盗塁死</button>';
+  html+='<button class="red" onclick="runnerAction(\'pickoff\')">牽制アウト</button>';
+  html+='<button class="red" onclick="runnerAction(\'runOut\')">走塁アウト</button>';
   html+='</div>';
 
-  document.getElementById('runnerSheetButtons').innerHTML=html;
-  document.getElementById('runnerSheetBackdrop').classList.add('show');
-  document.getElementById('runnerSheet').classList.add('show');
+  body.innerHTML=html;
+  panel.classList.remove('hidden');
+  panel.classList.add('show');
+
+  // Make the opened tab obvious and bring it into view.
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'center'}),30);
 }
-function closeRunnerSheet(){
-  document.getElementById('runnerSheetBackdrop').classList.remove('show');
-  document.getElementById('runnerSheet').classList.remove('show');
+function closeRunnerActionPanel(){
+  const panel=document.getElementById('runnerActionPanel');
+  panel.classList.add('hidden');
+  panel.classList.remove('show');
   selectedRunnerBase=null;
 }
-function runnerSheetAction(action){
+function runnerAction(action){
   const from=selectedRunnerBase;
-  if(from===null || !st.bases[from]){ closeRunnerSheet(); return; }
+  if(from===null || !st.bases[from]){
+    closeRunnerActionPanel();
+    return;
+  }
 
   const runner=st.bases[from];
 
   if(action==='steal' || action==='advance1' || action==='advance2'){
-    let dest= action==='advance2' ? from+2 : from+1;
+    const dest=action==='advance2' ? from+2 : from+1;
     if(dest>2){
-      closeRunnerSheet();
+      closeRunnerActionPanel();
       return;
     }
     if(st.bases[dest]){
       alert('進塁先にランナーがいます');
       return;
     }
+
     save();
     st.bases[from]=null;
     st.bases[dest]=runner;
 
-    const result =
+    const result=
       action==='steal' ? '盗塁' :
       action==='advance2' ? '悪送球などで二つ進塁' :
       '悪送球などで進塁';
@@ -895,12 +899,12 @@ function runnerSheetAction(action){
       side:st.top?'my':'opp',player:runner,result:'得点'
     });
   }
-  else if(action==='stealOut' || action==='pickoff' || action==='runOut'){
+  else{
     save();
     st.bases[from]=null;
     st.o++;
 
-    const result =
+    const result=
       action==='stealOut' ? '盗塁死' :
       action==='pickoff' ? '牽制アウト' :
       '走塁アウト';
@@ -914,7 +918,7 @@ function runnerSheetAction(action){
     if(st.o>=3)changeSides();
   }
 
-  closeRunnerSheet();
+  closeRunnerActionPanel();
   render();
 }
 
