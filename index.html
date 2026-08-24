@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.7.2</title>
+<title>クロ野球 Ver.7.3</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -16,7 +16,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,B
 header{padding:18px;text-align:center;background:#202020;font-weight:800;font-size:22px;position:sticky;top:0;z-index:5}
 main{max-width:920px;margin:auto;padding:8px;transition:background .25s ease}
 .screen{display:none}.screen.active{display:block}
-.card{background:rgba(29,29,29,.88);border:1px solid #ffffff22;border-radius:14px;padding:12px;backdrop-filter:blur(2px)}
+.card{background:rgba(12,12,12,.72);border:1px solid #ffffff30;border-radius:14px;padding:12px;backdrop-filter:blur(2px)}
 h2{text-align:center;margin:8px 0 20px}
 .field{margin:14px 0}.field label{display:block;color:#bbb;margin-bottom:7px;font-weight:700}
 input,select{width:100%;padding:9px;border-radius:8px;border:1px solid #555;background:var(--panel2);color:#fff;font-size:14px}
@@ -82,13 +82,13 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
 .correctionRow{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin:5px 0}
 .correctionRow button{margin:0;padding:8px 10px;font-size:12px;background:#8a6d00}
 .gameTheme{min-height:100vh}
-.gameTheme::before{content:'';position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,var(--theme1,#101010),var(--theme2,#101010));transition:background .25s ease}
-body.game-active{background:transparent}
-body.game-active header{background:rgba(20,20,20,.78);backdrop-filter:blur(5px)}
+.gameTheme::before{content:'';position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,var(--theme1,#176b4c) 0%,var(--themeMid,#124d39) 48%,var(--theme2,#0b2d22) 100%);transition:background .25s ease}
+body.game-active{background:var(--themeBody,#176b4c)!important}
+body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)} body.game-active #s3{background:transparent!important}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.7.2</small></header><div class="sideToast" id="sideToast"></div>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.7.3</small></header><div class="sideToast" id="sideToast"></div>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -349,8 +349,15 @@ function applyGameTheme(){
   const main=document.getElementById('appMain');
   document.body.classList.add('game-active');
   main.classList.add('gameTheme');
-  main.style.setProperty('--theme1',mixColor(activeColor,-0.18));
-  main.style.setProperty('--theme2',mixColor(activeColor,-0.72));
+
+  const top=mixColor(activeColor,0.08);
+  const mid=mixColor(activeColor,-0.22);
+  const bottom=mixColor(activeColor,-0.52);
+
+  main.style.setProperty('--theme1',top);
+  main.style.setProperty('--themeMid',mid);
+  main.style.setProperty('--theme2',bottom);
+  document.body.style.setProperty('--themeBody',mid);
 }
 
 function show(id){
@@ -365,6 +372,8 @@ function show(id){
     document.getElementById('appMain').classList.remove('gameTheme');
     document.getElementById('appMain').style.removeProperty('--theme1');
     document.getElementById('appMain').style.removeProperty('--theme2');
+    document.getElementById('appMain').style.removeProperty('--themeMid');
+    document.body.style.removeProperty('--themeBody');
   }
   window.scrollTo(0,0);
 }
