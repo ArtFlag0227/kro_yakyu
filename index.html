@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.8.1</title>
+<title>クロ野球 Ver.8.2</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -101,7 +101,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8.1</small></header><div class="sideToast" id="sideToast"></div>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8.2</small></header><div class="sideToast" id="sideToast"></div>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -161,12 +161,12 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div id="oppLineup"></div>
     </div>
 
-    <div class="sectionTitle">ベンチメンバー</div>
+    <div class="sectionTitle">自チーム ベンチメンバー</div>
     <div class="subCard">
-      <p class="small">代打・守備交代用。試合中にも追加できます。</p>
+      <p class="small">自チームの代打・守備交代用。試合中にも追加できます。</p>
       <div class="opponentHead" style="grid-template-columns:58px 1fr"><span>背番号</span><span>選手名</span></div>
       <div id="benchLineup"></div>
-      <button class="gray" onclick="addBenchInput()">＋ ベンチ選手を追加</button>
+      <button class="gray" onclick="addBenchInput()">＋ 自チームのベンチ選手を追加</button>
     </div>
     <button onclick="go3()">試合開始 →</button>
   </div>
@@ -282,10 +282,19 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <span>二度押し防止つき</span>
     </div>
 
-    <div class="sectionTitle">選手交代</div>
-    <div class="grid">
+    <div class="sectionTitle" id="changeSectionTitle">自チームの選手交代</div>
+
+    <div id="myOffenseActions">
+      <div class="small">自チーム攻撃中：代打は自チームのベンチから選びます</div>
       <button class="yellow" onclick="openPinchHitter()">代打</button>
-      <button class="blue" onclick="openPitcherChange()">投手交代</button>
+    </div>
+
+    <div id="myDefenseActions" class="hidden">
+      <div class="small">相手攻撃中：自チームは守備中です</div>
+      <div class="grid">
+        <button class="blue" onclick="openPitcherChange()">投手交代</button>
+        <button class="gray" onclick="toggleChanges()">守備位置をまとめて変更</button>
+      </div>
     </div>
 
     <div class="changePanel hidden" id="quickChangePanel">
@@ -294,12 +303,11 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <button class="gray" onclick="closeQuickChange()">閉じる</button>
     </div>
 
-    <button class="gray" onclick="toggleChanges()">守備位置をまとめて変更</button>
     <div class="changePanel hidden" id="changePanel">
-      <div class="sectionTitle">現在の守備・ベンチ</div>
+      <div class="sectionTitle">自チーム：現在の守備・ベンチ</div>
       <p class="small">複数人まとめて変更して「確定」。代打もここからできます。</p>
       <div id="changeRows"></div>
-      <button class="gray" onclick="addBenchDuringGame()">＋ ベンチ選手を追加</button>
+      <button class="gray" onclick="addBenchDuringGame()">＋ 自チームのベンチ選手を追加</button>
       <button onclick="saveChanges()">変更を確定</button>
     </div>
 
@@ -316,6 +324,20 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div class="sectionTitle">プレー履歴</div>
       <div id="playSummary"></div>
       <button class="gray" onclick="closeResult()">試合画面に戻る</button>
+    </div>
+
+    <button class="gray" onclick="toggleOpponentChange()">相手チームの交代を記録</button>
+    <div class="changePanel hidden" id="oppChangePanel">
+      <div class="sectionTitle">相手チームの交代記録</div>
+      <p class="small">相手の代打・投手交代・守備変更が分かった時だけ記録できます。</p>
+      <select id="oppChangeType">
+        <option>代打</option>
+        <option>投手交代</option>
+        <option>守備変更</option>
+        <option>その他</option>
+      </select>
+      <input id="oppChangeMemo" placeholder="例：#18 代打、#1→#11 投手交代">
+      <button onclick="saveOpponentChange()">相手の変更を記録</button>
     </div>
 
     <button class="gray" onclick="toggleOpponentEditor()">相手メンバーを編集</button>
@@ -699,6 +721,8 @@ function changeSides(){
   if(st.top)st.top=false;
   else{st.top=true;st.inning++;}
   log('3アウト！ チェンジ');
+  const q=document.getElementById('quickChangePanel'); if(q)q.classList.add('hidden');
+  const c=document.getElementById('changePanel'); if(c)c.classList.add('hidden');
   applyGameTheme();
   showSideChange();
 }
@@ -743,6 +767,15 @@ function render(){
 
   const atk=document.getElementById('attack');
   atk.textContent='⚾ '+(st.top?my:op)+'　攻撃中';
+
+  const offActions=document.getElementById('myOffenseActions');
+  const defActions=document.getElementById('myDefenseActions');
+  const changeTitle=document.getElementById('changeSectionTitle');
+  if(offActions && defActions){
+    offActions.classList.toggle('hidden',!st.top);
+    defActions.classList.toggle('hidden',st.top);
+    changeTitle.textContent=st.top?'自チームの攻撃交代':'自チームの守備交代';
+  }
   atk.style.setProperty('--active',activeColor);
   atk.style.setProperty('--attackBg',activeColor);
 
@@ -834,6 +867,7 @@ function usePinchHitter(i){
   closeQuickChange(); render();
 }
 function openPitcherChange(){
+  if(st.top){ alert('今は自チームの攻撃中です。自チームの投手交代は相手の攻撃中に行います。'); return; }
   const box=document.getElementById('quickChangePanel');
   document.getElementById('quickChangeTitle').textContent='投手交代';
   const body=document.getElementById('quickChangeBody');
@@ -890,6 +924,7 @@ function allRoster(){
   return arr;
 }
 function toggleChanges(){
+  if(st.top){ alert('今は自チームの攻撃中です。守備変更は相手の攻撃中に行います。'); return; }
   const box=document.getElementById('changePanel');
   if(box.classList.contains('hidden')){
     renderChanges(); box.classList.remove('hidden');
@@ -947,6 +982,21 @@ function saveChanges(){
   }
   document.getElementById('changePanel').classList.add('hidden');
   render();
+}
+
+
+function toggleOpponentChange(){
+  const box=document.getElementById('oppChangePanel');
+  box.classList.toggle('hidden');
+}
+function saveOpponentChange(){
+  const type=document.getElementById('oppChangeType').value;
+  const memo=document.getElementById('oppChangeMemo').value.trim();
+  if(!memo){ alert('変更内容を入力してください'); return; }
+  const text=st.inning+'回'+(st.top?'表':'裏')+'　相手 '+type+'：'+memo;
+  changeEvents.push(text); log(text);
+  document.getElementById('oppChangeMemo').value='';
+  document.getElementById('oppChangePanel').classList.add('hidden');
 }
 
 function toggleOpponentEditor(){
