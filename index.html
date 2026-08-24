@@ -16,9 +16,11 @@ h2{text-align:center}
 .field{margin:14px 0}.field label{display:block;color:#bbb;margin-bottom:6px}
 input{box-sizing:border-box;width:100%;padding:14px;border-radius:9px;border:1px solid #555;background:#292929;color:#fff;font-size:17px}
 button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;background:#087f5b;color:#fff;font-size:18px;font-weight:700}
+.lineupRow{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;margin:8px 0}
+.order{text-align:center;font-weight:800;font-size:17px}
+.lineupRow input{padding:12px}
 .player{background:#292929;padding:13px;border-radius:9px;margin:8px 0}
 .big{text-align:center;font-size:27px;font-weight:800;margin:16px 0}
-.note{text-align:center;color:#999;font-size:13px}
 .scoreboard{display:flex;align-items:center;justify-content:center;gap:16px;font-size:22px;font-weight:800;flex-wrap:wrap}
 .scoreNum{font-size:38px}
 .status{display:flex;justify-content:space-around;background:#292929;border-radius:12px;padding:15px;margin:16px 0;text-align:center}
@@ -47,11 +49,9 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
 <section id="s2" class="screen">
   <div class="card">
     <h2>② スタメン</h2>
-    <div class="player">1番　山田</div>
-    <div class="player">2番　佐藤</div>
-    <div class="player">3番　鈴木</div>
+    <p class="small">1番〜9番まで選手名を入力できます</p>
+    <div id="lineup"></div>
     <button onclick="go3()">試合開始 →</button>
-    <p class="small">まずは3人の打順で試せるVer.1です</p>
   </div>
 </section>
 
@@ -66,7 +66,8 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
       <span class="scoreNum" id="oppScore">0</span>
       <span id="oppName">相手チーム</span>
     </div>
-    <div class="player" id="batter">1番　山田</div>
+
+    <div class="player" id="batter"></div>
 
     <div class="status">
       <span>ボール<b id="balls">0</b></span>
@@ -90,9 +91,17 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
 </main>
 
 <script>
-const players=['山田','佐藤','鈴木'];
+let players=['山田','佐藤','鈴木','','','','','',''];
 let st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
 let stack=[];
+
+const lineup=document.getElementById('lineup');
+players.forEach((p,i)=>{
+  const r=document.createElement('div');
+  r.className='lineupRow';
+  r.innerHTML='<div class="order">'+(i+1)+'番</div><input id="p'+i+'" value="'+p+'" placeholder="選手名">';
+  lineup.appendChild(r);
+});
 
 function show(id){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
@@ -101,8 +110,12 @@ function show(id){
 }
 function go2(){ show('s2'); }
 function go3(){
+  players=players.map((_,i)=>document.getElementById('p'+i).value.trim()||('選手'+(i+1)));
   document.getElementById('myName').textContent=document.getElementById('myteam').value||'クロチーム';
   document.getElementById('oppName').textContent=document.getElementById('opp').value||'相手チーム';
+  st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
+  stack=[];
+  document.getElementById('history').innerHTML='<div>プレイボール！</div>';
   show('s3');
   render();
 }
@@ -116,7 +129,8 @@ function log(t){
   document.getElementById('history').prepend(d);
 }
 function nextBatter(){
-  st.b=0; st.s=0;
+  st.b=0;
+  st.s=0;
   st.batter=(st.batter+1)%players.length;
 }
 function ball(){
@@ -149,13 +163,14 @@ function hit(){
 }
 function run(){
   save();
-  if(st.top) st.my++; else st.opp++;
+  if(st.top) st.my++;
+  else st.opp++;
   log('得点！');
   render();
 }
 function out(){
   save();
-  log('アウト');
+  log(players[st.batter]+' アウト');
   doOut();
   render();
 }
