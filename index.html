@@ -32,9 +32,9 @@ button{width:100%;padding:11px 7px;margin-top:8px;border:0;border-radius:9px;bac
 .lineupRow input,.lineupRow select{padding:10px 7px;font-size:15px}
 .order{text-align:center;font-weight:800}
 .big{text-align:center;font-size:28px;font-weight:800;margin:12px 0}
-.attack{margin:8px 0;padding:12px;border-radius:10px;background:#292929;text-align:center;font-weight:900;border:2px solid var(--active,#555);font-size:16px}
+.attack{position:sticky;top:96px;z-index:5;margin:8px 0;padding:12px;border-radius:10px;background:var(--attackBg,#292929);color:#fff!important;text-align:center;font-weight:900;border:3px solid var(--active,#555);font-size:16px;box-shadow:0 5px 14px #0009}
 .scoreboard{display:grid;grid-template-columns:1fr auto 18px auto 1fr;gap:8px;align-items:center;text-align:center}
-.teamBadge{padding:10px 6px;border:2px solid var(--tc);border-radius:12px;font-size:16px;font-weight:800}
+.teamBadge{padding:10px 6px;border:2px solid var(--tc);border-radius:12px;font-size:16px;font-weight:800;transition:.15s}.teamBadge.activeTeam{background:var(--tc);color:#fff;box-shadow:0 0 0 2px #ffffff22}.teamBadge.defending{opacity:.42;filter:saturate(.65)}
 .scoreNum{font-size:38px;font-weight:900}
 .player{margin:14px 0;background:#292929;border-left:8px solid var(--active);padding:14px;border-radius:12px;font-weight:800}
 .status{display:flex;justify-content:space-around;background:#292929;border-radius:10px;padding:8px;margin:8px 0;text-align:center}
@@ -541,7 +541,7 @@ function showSideChange(){
   const c=st.top?document.getElementById('myColor').value:document.getElementById('oppColor').value;
   const t=document.getElementById('sideToast');
   t.style.setProperty('--tc',c);
-  t.innerHTML='⚾ 攻守交代<br><span style="font-size:15px">'+(st.top?my:op)+' の攻撃</span>';
+  t.innerHTML='⚾ 攻守交代<br><span style="font-size:16px">次は '+(st.top?my:op)+' の攻撃</span>';
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),1300);
 }
@@ -573,9 +573,17 @@ function render(){
   document.getElementById('oppScore').textContent=st.opp;
   document.getElementById('outs').textContent=st.o;
 
-  document.getElementById('attack').textContent='▶ '+(st.top?my:op)+' 攻撃中　｜　'+st.inning+'回'+(st.top?'表':'裏');
-  document.getElementById('attack').style.color=activeColor;
-  document.getElementById('attack').style.setProperty('--active',activeColor);
+  const atk=document.getElementById('attack');
+  atk.textContent='⚾ '+(st.top?my:op)+'　攻撃中';
+  atk.style.setProperty('--active',activeColor);
+  atk.style.setProperty('--attackBg',activeColor);
+
+  const myBadge=document.getElementById('myName');
+  const oppBadge=document.getElementById('oppName');
+  myBadge.classList.toggle('activeTeam',st.top);
+  myBadge.classList.toggle('defending',!st.top);
+  oppBadge.classList.toggle('activeTeam',!st.top);
+  oppBadge.classList.toggle('defending',st.top);
   document.getElementById('batter').style.setProperty('--active',activeColor);
 
   const no=nums[st.batter]?'背番号 '+nums[st.batter]+'　':'';
