@@ -144,17 +144,33 @@ button{width:100%;padding:16px;margin-top:12px;border:0;border-radius:11px;backg
     </div>
 
     <div class="status">
-      <span>ボール<b id="balls">0</b></span>
-      <span>ストライク<b id="strikes">0</b></span>
       <span>アウト<b id="outs">0</b></span>
     </div>
 
-    <div class="sectionTitle">カウント・アウト</div>
+    <div class="sectionTitle">三振</div>
     <div class="grid">
-      <button onclick="ball()">ボール</button>
-      <button class="yellow" onclick="strike()">ストライク</button>
-      <button class="red" onclick="out()">アウト</button>
-      <button class="gray" onclick="undo()">ひとつ戻す</button>
+      <button class="yellow" onclick="strikeout('空振り三振')">空振り三振</button>
+      <button class="yellow" onclick="strikeout('見逃し三振')">見逃し三振</button>
+    </div>
+
+    <div class="sectionTitle">アウトの種類</div>
+    <div class="runnerPanel">
+      <div class="runnerRow">
+        <select id="outPos">
+          <option value="投">投手</option><option value="捕">捕手</option>
+          <option value="一">一塁手</option><option value="二">二塁手</option>
+          <option value="三">三塁手</option><option value="遊">遊撃手</option>
+          <option value="左" selected>左翼手</option><option value="中">中堅手</option><option value="右">右翼手</option>
+        </select>
+        <select id="outType">
+          <option value="ゴロ">ゴロ</option>
+          <option value="飛">フライ</option>
+          <option value="直">ライナー</option>
+          <option value="邪飛">ファウルフライ</option>
+        </select>
+      </div>
+      <button class="red" onclick="recordFieldOut()">アウトを記録</button>
+      <p class="small">例：左翼手＋フライ → 「左飛」</p>
     </div>
 
     <div class="sectionTitle">打撃結果</div>
@@ -165,7 +181,14 @@ button{width:100%;padding:16px;margin-top:12px;border:0;border-radius:11px;backg
       <button class="yellow" onclick="homerun()">本塁打</button>
     </div>
 
+    <div class="sectionTitle">その他の出塁</div>
+    <div class="grid">
+      <button class="gray" onclick="reachBase('失策')">失策（エラー）</button>
+      <button class="gray" onclick="reachBase('野選')">野選（FC）</button>
+    </div>
+
     <button onclick="run()">得点 ＋1</button>
+    <button class="gray" onclick="undo()">ひとつ戻す</button>
 
     <div class="history" id="history"><div>プレイボール！</div></div>
     <button class="red" onclick="resetGame()">試合をリセット</button>
@@ -264,6 +287,47 @@ function strike(){
 }
 function currentBatterName(){
   return st.top ? players[st.batter] : ('相手 '+(st.oppBatter+1)+'番');
+}
+
+function strikeout(kind){
+  save();
+  const n=currentBatterName();
+  log(n+' '+kind);
+  doOut();
+  render();
+}
+function recordFieldOut(){
+  save();
+  const n=currentBatterName();
+  const pos=document.getElementById('outPos').value;
+  const type=document.getElementById('outType').value;
+  log(n+' '+pos+type);
+  doOut();
+  render();
+}
+function forceOneBaseAdvance(){
+  // エラー・野選の初期動作：走者は基本1つ進塁、打者は一塁へ。
+  for(let i=2;i>=0;i--){
+    if(st.bases[i]){
+      const runner=st.bases[i];
+      st.bases[i]=null;
+      if(i===2){
+        if(st.top)st.my++; else st.opp++;
+        log(runner+' 生還！');
+      }else{
+        st.bases[i+1]=runner;
+      }
+    }
+  }
+}
+function reachBase(kind){
+  save();
+  const n=currentBatterName();
+  forceOneBaseAdvance();
+  st.bases[0]=n;
+  log(n+' '+kind+'で出塁');
+  nextBatter();
+  render();
 }
 function advanceDefault(bases){
   // 既存走者は同じ塁数だけ進める。ホーム到達なら得点。
@@ -368,8 +432,6 @@ function render(){
   document.getElementById('inning').textContent=st.inning+'回'+(st.top?'表':'裏');
   document.getElementById('myScore').textContent=st.my;
   document.getElementById('oppScore').textContent=st.opp;
-  document.getElementById('balls').textContent=st.b;
-  document.getElementById('strikes').textContent=st.s;
   document.getElementById('outs').textContent=st.o;
 
   document.getElementById('attack').textContent='● '+(st.top?my:op)+' 攻撃中';
