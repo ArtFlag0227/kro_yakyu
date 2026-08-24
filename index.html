@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.8</title>
+<title>クロ野球 Ver.8.1</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -95,10 +95,13 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 .battingLine{padding:8px 4px;border-bottom:1px solid #333;font-size:13px}
 .eventLine{padding:6px 3px;border-bottom:1px solid #333;font-size:12px;color:#ddd}
 .hidden{display:none!important}
+
+.quickPlayer{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;border-bottom:1px solid #333;padding:7px 0}
+.quickPlayer button{margin:0;width:auto;padding:8px 12px}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8</small></header><div class="sideToast" id="sideToast"></div>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.8.1</small></header><div class="sideToast" id="sideToast"></div>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -279,7 +282,19 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <span>二度押し防止つき</span>
     </div>
 
-    <button class="gray" onclick="toggleChanges()">選手交代・守備変更</button>
+    <div class="sectionTitle">選手交代</div>
+    <div class="grid">
+      <button class="yellow" onclick="openPinchHitter()">代打</button>
+      <button class="blue" onclick="openPitcherChange()">投手交代</button>
+    </div>
+
+    <div class="changePanel hidden" id="quickChangePanel">
+      <div id="quickChangeTitle" class="sectionTitle"></div>
+      <div id="quickChangeBody"></div>
+      <button class="gray" onclick="closeQuickChange()">閉じる</button>
+    </div>
+
+    <button class="gray" onclick="toggleChanges()">守備位置をまとめて変更</button>
     <div class="changePanel hidden" id="changePanel">
       <div class="sectionTitle">現在の守備・ベンチ</div>
       <p class="small">複数人まとめて変更して「確定」。代打もここからできます。</p>
@@ -787,6 +802,86 @@ function render(){
 }
 
 
+
+
+function closeQuickChange(){
+  document.getElementById('quickChangePanel').classList.add('hidden');
+}
+function openPinchHitter(){
+  const box=document.getElementById('quickChangePanel');
+  document.getElementById('quickChangeTitle').textContent='代打を選択';
+  const body=document.getElementById('quickChangeBody');
+  body.innerHTML='<div class="small">現在の打者：'+currentBatterName()+'</div>';
+  if(!benchPlayers.length) body.innerHTML+='<div class="small">ベンチ選手がいません。「守備位置をまとめて変更」から追加できます。</div>';
+  benchPlayers.forEach((name,i)=>{
+    const row=document.createElement('div'); row.className='quickPlayer';
+    row.innerHTML='<span>'+(benchNums[i]?'#'+benchNums[i]+' ':'')+name+'</span><button onclick="usePinchHitter('+i+')">この選手を代打</button>';
+    body.appendChild(row);
+  });
+  box.classList.remove('hidden');
+}
+function usePinchHitter(i){
+  if(!st.top){ alert('現在は相手チームの攻撃です'); return; }
+  save();
+  const slot=st.batter;
+  const oldName=players[slot], oldNo=nums[slot], oldPos=positions[slot];
+  const newName=benchPlayers[i], newNo=benchNums[i];
+  players[slot]=newName; nums[slot]=newNo; positions[slot]='代打';
+  benchPlayers[i]=oldName; benchNums[i]=oldNo;
+  const text=st.inning+'回'+(st.top?'表':'裏')+'　'+
+    (newNo?'#'+newNo+' ':'')+newName+'　代打（'+oldName+'に代わって）';
+  changeEvents.push(text); log(text);
+  closeQuickChange(); render();
+}
+function openPitcherChange(){
+  const box=document.getElementById('quickChangePanel');
+  document.getElementById('quickChangeTitle').textContent='投手交代';
+  const body=document.getElementById('quickChangeBody');
+  const pitcherIndex=positions.findIndex(x=>x==='投');
+  const pitcher=pitcherIndex>=0?players[pitcherIndex]:'未設定';
+  body.innerHTML='<div class="small">現在の投手：'+pitcher+'</div><div class="small">新しい投手を選んでください。現在の投手は交代後に守備位置を変更できます。</div>';
+
+  players.forEach((name,i)=>{
+    if(i===pitcherIndex)return;
+    const row=document.createElement('div'); row.className='quickPlayer';
+    row.innerHTML='<span>'+(nums[i]?'#'+nums[i]+' ':'')+name+'（'+(positions[i]||'未設定')+'）</span><button onclick="usePitcherFromStarter('+i+')">投手へ</button>';
+    body.appendChild(row);
+  });
+  benchPlayers.forEach((name,i)=>{
+    const row=document.createElement('div'); row.className='quickPlayer';
+    row.innerHTML='<span>'+(benchNums[i]?'#'+benchNums[i]+' ':'')+name+'（ベンチ）</span><button onclick="usePitcherFromBench('+i+')">投手へ</button>';
+    body.appendChild(row);
+  });
+  box.classList.remove('hidden');
+}
+function usePitcherFromStarter(i){
+  save();
+  const oldPitcher=positions.findIndex(x=>x==='投');
+  const oldName=oldPitcher>=0?players[oldPitcher]:'未設定';
+  const newName=players[i];
+  if(oldPitcher>=0) positions[oldPitcher]='ベンチ';
+  positions[i]='投';
+  const text=st.inning+'回'+(st.top?'表':'裏')+'　投手交代 '+oldName+' → '+newName;
+  changeEvents.push(text); log(text);
+  closeQuickChange(); render();
+}
+function usePitcherFromBench(i){
+  save();
+  const oldPitcher=positions.findIndex(x=>x==='投');
+  const oldName=oldPitcher>=0?players[oldPitcher]:'未設定';
+  if(oldPitcher>=0) positions[oldPitcher]='ベンチ';
+
+  // Grass-roots flexible substitution: new pitcher takes the old pitcher's batting-order slot.
+  const slot=oldPitcher>=0?oldPitcher:st.batter;
+  const removedName=players[slot], removedNo=nums[slot];
+  const newName=benchPlayers[i], newNo=benchNums[i];
+  players[slot]=newName; nums[slot]=newNo; positions[slot]='投';
+  benchPlayers[i]=removedName; benchNums[i]=removedNo;
+
+  const text=st.inning+'回'+(st.top?'表':'裏')+'　投手交代 '+oldName+' → '+newName;
+  changeEvents.push(text); log(text);
+  closeQuickChange(); render();
+}
 
 function allRoster(){
   const arr=[];
