@@ -7,41 +7,86 @@
 <meta name="apple-mobile-web-app-title" content="クロ野球">
 <title>クロ野球</title>
 <style>
-body{margin:0;background:#101010;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
-header{padding:18px;text-align:center;background:#202020;font-weight:800;font-size:22px}
-main{max-width:650px;margin:auto;padding:18px}
+:root{
+  --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
+  --my:#0b8f68; --opp:#b23a3a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+header{padding:18px;text-align:center;background:#202020;font-weight:800;font-size:22px;position:sticky;top:0;z-index:5}
+main{max-width:680px;margin:auto;padding:18px}
 .screen{display:none}.screen.active{display:block}
-.card{background:#1d1d1d;border:1px solid #333;border-radius:16px;padding:20px}
-h2{text-align:center}
-.field{margin:14px 0}.field label{display:block;color:#bbb;margin-bottom:6px}
-input{box-sizing:border-box;width:100%;padding:14px;border-radius:9px;border:1px solid #555;background:#292929;color:#fff;font-size:17px}
-button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;background:#087f5b;color:#fff;font-size:18px;font-weight:700}
-.lineupRow{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;margin:8px 0}
-.order{text-align:center;font-weight:800;font-size:17px}
-.lineupRow input{padding:12px}
-.player{background:#292929;padding:13px;border-radius:9px;margin:8px 0}
-.big{text-align:center;font-size:27px;font-weight:800;margin:16px 0}
-.scoreboard{display:flex;align-items:center;justify-content:center;gap:16px;font-size:22px;font-weight:800;flex-wrap:wrap}
-.scoreNum{font-size:38px}
+.card{background:var(--panel);border:1px solid #333;border-radius:18px;padding:20px}
+h2{text-align:center;margin:8px 0 20px}
+.field{margin:14px 0}.field label{display:block;color:#bbb;margin-bottom:7px;font-weight:700}
+input,select{width:100%;padding:13px;border-radius:10px;border:1px solid #555;background:var(--panel2);color:#fff;font-size:16px}
+button{width:100%;padding:16px;margin-top:12px;border:0;border-radius:11px;background:#087f5b;color:#fff;font-size:18px;font-weight:800}
+.small{font-size:13px;color:#aaa;text-align:center}
+.teamSetup{border-left:8px solid var(--tc);background:#171717;border-radius:12px;padding:12px 14px;margin:16px 0}
+.colorRow{display:flex;align-items:center;gap:12px}
+.colorRow input[type=color]{width:72px;height:52px;padding:4px}
+.previewDot{width:22px;height:22px;border-radius:50%;background:var(--tc);border:2px solid #fff3}
+.lineupHead,.lineupRow{display:grid;grid-template-columns:42px 62px 1fr 82px;gap:7px;align-items:center}
+.lineupHead{font-size:12px;color:#aaa;text-align:center;margin-bottom:6px}
+.lineupRow{margin:8px 0}
+.lineupRow input,.lineupRow select{padding:10px 7px;font-size:15px}
+.order{text-align:center;font-weight:800}
+.big{text-align:center;font-size:28px;font-weight:800;margin:12px 0}
+.attack{margin:12px 0;padding:10px;border-radius:10px;background:#292929;text-align:center;font-weight:800}
+.scoreboard{display:grid;grid-template-columns:1fr auto 18px auto 1fr;gap:8px;align-items:center;text-align:center}
+.teamBadge{padding:10px 6px;border:2px solid var(--tc);border-radius:12px;font-size:16px;font-weight:800}
+.scoreNum{font-size:38px;font-weight:900}
+.player{margin:14px 0;background:#292929;border-left:8px solid var(--active);padding:14px;border-radius:12px;font-weight:800}
 .status{display:flex;justify-content:space-around;background:#292929;border-radius:12px;padding:15px;margin:16px 0;text-align:center}
 .status b{display:block;font-size:25px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grid button{margin:0}
+.sectionTitle{margin:18px 0 8px;font-weight:800;color:#ddd}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid button{margin:0}
 .red{background:#9b2c2c}.gray{background:#555}.yellow{background:#8a6d00}.blue{background:#245f8f}.purple{background:#6b3f8f}
 .history{margin-top:16px;max-height:220px;overflow:auto;background:#151515;border-radius:10px;padding:10px;font-size:14px}
-.history div{padding:6px;border-bottom:1px solid #333}
-.small{font-size:14px;color:#bbb;text-align:center;margin-top:8px}
-.sectionTitle{margin:18px 0 8px;font-weight:800;color:#ddd}
+.history div{padding:7px;border-bottom:1px solid #333}
+.legend{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#252525;border-radius:999px;padding:7px 10px;font-size:13px}
+.chip i{width:14px;height:14px;border-radius:50%;background:var(--c)}
 </style>
 </head>
 <body>
 <header>⚾ クロ野球</header>
 <main>
+
 <section id="s1" class="screen active">
   <div class="card">
     <h2>① 試合設定</h2>
-    <div class="field"><label>自チーム</label><input id="myteam" value="クロチーム"></div>
-    <div class="field"><label>相手チーム</label><input id="opp" value="相手チーム"></div>
+
+    <div class="teamSetup" id="mySetup" style="--tc:#0b8f68">
+      <div class="field">
+        <label>自チーム</label>
+        <input id="myteam" value="クロチーム">
+      </div>
+      <div class="field">
+        <label>ユニフォーム色</label>
+        <div class="colorRow">
+          <input type="color" id="myColor" value="#0b8f68" oninput="colorPreview()">
+          <span class="previewDot" id="myDot"></span>
+          <span>自チームの色</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="teamSetup" id="oppSetup" style="--tc:#b23a3a">
+      <div class="field">
+        <label>相手チーム</label>
+        <input id="opp" value="相手チーム">
+      </div>
+      <div class="field">
+        <label>ユニフォーム色</label>
+        <div class="colorRow">
+          <input type="color" id="oppColor" value="#b23a3a" oninput="colorPreview()">
+          <span class="previewDot" id="oppDot"></span>
+          <span>相手チームの色</span>
+        </div>
+      </div>
+    </div>
+
     <div class="field"><label>球場</label><input id="field" value="〇〇グラウンド"></div>
     <button onclick="go2()">スタメンへ →</button>
   </div>
@@ -50,7 +95,8 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
 <section id="s2" class="screen">
   <div class="card">
     <h2>② スタメン</h2>
-    <p class="small">1番〜9番まで選手名を入力できます</p>
+    <p class="small">背番号・選手名・守備位置を入力できます</p>
+    <div class="lineupHead"><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span></div>
     <div id="lineup"></div>
     <button onclick="go3()">試合開始 →</button>
   </div>
@@ -60,12 +106,19 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
   <div class="card">
     <h2>③ 試合</h2>
     <div class="big" id="inning">1回表</div>
+    <div class="attack" id="attack"></div>
+
     <div class="scoreboard">
-      <span id="myName">クロチーム</span>
+      <span class="teamBadge" id="myName">クロチーム</span>
       <span class="scoreNum" id="myScore">0</span>
       <span>−</span>
       <span class="scoreNum" id="oppScore">0</span>
-      <span id="oppName">相手チーム</span>
+      <span class="teamBadge" id="oppName">相手チーム</span>
+    </div>
+
+    <div class="legend">
+      <span class="chip"><i id="myLegend"></i><span id="myLegendText">自チーム</span></span>
+      <span class="chip"><i id="oppLegend"></i><span id="oppLegendText">相手</span></span>
     </div>
 
     <div class="player" id="batter"></div>
@@ -98,40 +151,74 @@ button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;backg
     <button class="red" onclick="resetGame()">試合をリセット</button>
   </div>
 </section>
+
 </main>
 
 <script>
 let players=['山田','佐藤','鈴木','','','','','',''];
+let nums=['1','2','3','','','','','',''];
+let positions=['遊','中','右','','','','','',''];
 let st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
 let stack=[];
+const posList=['','投','捕','一','二','三','遊','左','中','右','DH'];
 
 const lineup=document.getElementById('lineup');
 players.forEach((p,i)=>{
   const r=document.createElement('div');
   r.className='lineupRow';
-  r.innerHTML='<div class="order">'+(i+1)+'番</div><input id="p'+i+'" value="'+p+'" placeholder="選手名">';
+  const options=posList.map(x=>'<option '+(x===positions[i]?'selected':'')+'>'+x+'</option>').join('');
+  r.innerHTML=
+    '<div class="order">'+(i+1)+'番</div>'+
+    '<input id="n'+i+'" value="'+nums[i]+'" placeholder="#">'+
+    '<input id="p'+i+'" value="'+p+'" placeholder="選手名">'+
+    '<select id="pos'+i+'">'+options+'</select>';
   lineup.appendChild(r);
 });
+
+function colorPreview(){
+  document.getElementById('mySetup').style.setProperty('--tc',document.getElementById('myColor').value);
+  document.getElementById('oppSetup').style.setProperty('--tc',document.getElementById('oppColor').value);
+  document.getElementById('myDot').style.background=document.getElementById('myColor').value;
+  document.getElementById('oppDot').style.background=document.getElementById('oppColor').value;
+}
+colorPreview();
 
 function show(id){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
 }
-function go2(){ show('s2'); }
+function go2(){show('s2')}
+
 function go3(){
   players=players.map((_,i)=>document.getElementById('p'+i).value.trim()||('選手'+(i+1)));
-  document.getElementById('myName').textContent=document.getElementById('myteam').value||'クロチーム';
-  document.getElementById('oppName').textContent=document.getElementById('opp').value||'相手チーム';
+  nums=nums.map((_,i)=>document.getElementById('n'+i).value.trim());
+  positions=positions.map((_,i)=>document.getElementById('pos'+i).value);
+
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+  const mc=document.getElementById('myColor').value;
+  const oc=document.getElementById('oppColor').value;
+
+  document.getElementById('myName').textContent=my;
+  document.getElementById('oppName').textContent=op;
+  document.getElementById('myName').style.setProperty('--tc',mc);
+  document.getElementById('oppName').style.setProperty('--tc',oc);
+  document.getElementById('myLegend').style.setProperty('--c',mc);
+  document.getElementById('oppLegend').style.setProperty('--c',oc);
+  document.getElementById('myLegendText').textContent=my;
+  document.getElementById('oppLegendText').textContent=op;
+
   st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
   stack=[];
   document.getElementById('history').innerHTML='<div>プレイボール！</div>';
   show('s3');
   render();
 }
+
 function save(){
   stack.push(JSON.stringify(st));
-  if(stack.length>50) stack.shift();
+  if(stack.length>50)stack.shift();
 }
 function log(t){
   const d=document.createElement('div');
@@ -144,25 +231,15 @@ function nextBatter(){
   st.batter=(st.batter+1)%players.length;
 }
 function ball(){
-  save();
-  st.b++;
-  if(st.b>=4){
-    log(players[st.batter]+' 四球');
-    nextBatter();
-  }else{
-    log('ボール');
-  }
+  save(); st.b++;
+  if(st.b>=4){log(players[st.batter]+' 四球');nextBatter();}
+  else log('ボール');
   render();
 }
 function strike(){
-  save();
-  st.s++;
-  if(st.s>=3){
-    log(players[st.batter]+' 三振');
-    doOut();
-  }else{
-    log('ストライク');
-  }
+  save(); st.s++;
+  if(st.s>=3){log(players[st.batter]+' 三振');doOut();}
+  else log('ストライク');
   render();
 }
 function hit(kind){
@@ -174,16 +251,14 @@ function hit(kind){
 function homerun(){
   save();
   const name=players[st.batter];
-  if(st.top) st.my++;
-  else st.opp++;
+  if(st.top)st.my++; else st.opp++;
   log(name+' 本塁打！ +1点');
   nextBatter();
   render();
 }
 function run(){
   save();
-  if(st.top) st.my++;
-  else st.opp++;
+  if(st.top)st.my++; else st.opp++;
   log('得点！');
   render();
 }
@@ -200,39 +275,45 @@ function doOut(){
   st.batter=(st.batter+1)%players.length;
   if(st.o>=3){
     st.o=0;
-    if(st.top){
-      st.top=false;
-    }else{
-      st.top=true;
-      st.inning++;
-    }
+    if(st.top)st.top=false;
+    else{st.top=true;st.inning++;}
     log('チェンジ！');
   }
 }
 function undo(){
-  if(!stack.length){
-    log('これ以上戻せません');
-    return;
-  }
+  if(!stack.length){log('これ以上戻せません');return;}
   st=JSON.parse(stack.pop());
   log('ひとつ戻しました');
   render();
 }
 function resetGame(){
-  if(!confirm('試合を最初からやり直しますか？')) return;
+  if(!confirm('試合を最初からやり直しますか？'))return;
   st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
   stack=[];
   document.getElementById('history').innerHTML='<div>プレイボール！</div>';
   render();
 }
 function render(){
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+  const mc=document.getElementById('myColor').value;
+  const oc=document.getElementById('oppColor').value;
+  const activeColor=st.top?mc:oc;
+
   document.getElementById('inning').textContent=st.inning+'回'+(st.top?'表':'裏');
   document.getElementById('myScore').textContent=st.my;
   document.getElementById('oppScore').textContent=st.opp;
   document.getElementById('balls').textContent=st.b;
   document.getElementById('strikes').textContent=st.s;
   document.getElementById('outs').textContent=st.o;
-  document.getElementById('batter').textContent=(st.batter+1)+'番　'+players[st.batter];
+
+  document.getElementById('attack').textContent='● '+(st.top?my:op)+' 攻撃中';
+  document.getElementById('attack').style.color=activeColor;
+  document.getElementById('batter').style.setProperty('--active',activeColor);
+
+  const no=nums[st.batter]?'背番号 '+nums[st.batter]+'　':'';
+  const ps=positions[st.batter]?'　守備 '+positions[st.batter]:'';
+  document.getElementById('batter').textContent=(st.batter+1)+'番　'+no+players[st.batter]+ps;
 }
 </script>
 </body>
