@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.9.1</title>
+<title>クロ野球 Ver.9.2</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -114,10 +114,36 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 }
 .base{pointer-events:auto!important;z-index:4}
 .base span{pointer-events:auto!important}
+
+.baseTap{
+  position:absolute!important;
+  z-index:60!important;
+  width:72px!important;
+  height:40px!important;
+  min-width:72px!important;
+  margin:0!important;
+  padding:4px 6px!important;
+  border-radius:12px!important;
+  border:2px solid #fff!important;
+  background:#111!important;
+  color:#fff!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  line-height:1.1!important;
+  box-shadow:0 3px 8px #000c!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:rgba(255,255,255,.25);
+  display:none;
+}
+.baseTap.show{display:block!important}
+.bt1{right:-4px!important;bottom:4px!important}
+.bt2{left:51px!important;top:-6px!important}
+.bt3{left:-7px!important;bottom:4px!important}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.9.1</small></header><div class="sideToast" id="sideToast"></div>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.9.2</small></header><div class="sideToast" id="sideToast"></div>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -219,6 +245,10 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div class="base b2" id="base2"><span id="base2txt">二塁</span></div>
       <div class="base b3" id="base3"><span id="base3txt">三塁</span></div>
       <div class="base b1" id="base1"><span id="base1txt">一塁</span></div>
+
+      <button type="button" class="baseTap bt2" id="baseTap2" onclick="runnerTap(1)"></button>
+      <button type="button" class="baseTap bt3" id="baseTap3" onclick="runnerTap(2)"></button>
+      <button type="button" class="baseTap bt1" id="baseTap1" onclick="runnerTap(0)"></button>
     </div>
 
     <div class="runnerPanel" id="runnerPanel">
@@ -1062,15 +1092,22 @@ function render(){
     txt.textContent=st.bases[i] ? ((i+1)+'塁\n'+st.bases[i]) : ((i+1)+'塁');
   }
   
-  // iPhone Safariでも確実に押せる「ランナー本人ボタン」
+  // ランナー表示：ひし形は表示専用。操作は上に重ねた本物のボタンで行う。
   const baseLabels=['一塁','二塁','三塁'];
   ['base1txt','base2txt','base3txt'].forEach((id,i)=>{
     const el=document.getElementById(id);
-    if(!el)return;
+    if(el) el.textContent=st.bases[i] ? baseLabels[i] : baseLabels[i];
+  });
+  ['baseTap1','baseTap2','baseTap3'].forEach((id,i)=>{
+    const b=document.getElementById(id);
+    if(!b)return;
     if(st.bases[i]){
-      el.innerHTML='<button type="button" class="runnerTapBtn" onclick="event.stopPropagation();runnerTap('+i+')">'+st.bases[i]+'</button>';
+      b.textContent=st.bases[i]+' ▶';
+      b.classList.add('show');
+      b.disabled=false;
     }else{
-      el.textContent=baseLabels[i];
+      b.textContent='';
+      b.classList.remove('show');
     }
   });
 
