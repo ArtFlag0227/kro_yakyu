@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.12</title>
+<title>クロ野球 Ver.12.1</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -629,10 +629,36 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
   #runnerActionPanel .runnerActionGrid{grid-template-columns:1fr 1fr}
 }
 
+
+/* ===== Ver.12.1 navigation safety ===== */
+.globalHomeBtn{
+  position:fixed;top:7px;left:7px;z-index:2000;
+  width:auto!important;min-width:86px;margin:0!important;
+  padding:7px 10px!important;border:1px solid #ffffff55!important;
+  border-radius:999px!important;background:#111d!important;color:#fff!important;
+  font-size:11px!important;font-weight:900!important;
+  box-shadow:0 3px 12px #0009;backdrop-filter:blur(4px)
+}
+@media (orientation:landscape){
+  .globalHomeBtn{top:5px;left:5px;min-width:74px;padding:5px 8px!important;font-size:10px!important}
+}
+.startConfirmBox{
+  position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;background:#000b
+}
+.startConfirmCard{
+  width:min(92vw,420px);background:#171717;border:1px solid #555;border-radius:14px;
+  padding:14px;box-shadow:0 10px 30px #000d
+}
+.startConfirmCard h3{margin:0 0 8px;font-size:17px}
+.startConfirmCard p{font-size:12px;color:#bbb;line-height:1.5}
+.startConfirmBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.startConfirmBtns button{margin:0!important}
+
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.12</small></header>
+<button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.12.1</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -916,7 +942,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
     <!-- 試合終了結果 -->
     <div class="resultPanel hidden" id="resultPanel">
       <div class="finalHero">
-        <div class="finalLabel">試合終了</div>
+        <div class="finalLabel">試合結果（あとから修正できます）</div>
         <div class="finalMatch" id="finalHeroScore">クロチーム 0 − 0 相手チーム</div>
         <div class="finalMeta" id="finalHeroMeta"></div>
       </div>
@@ -949,7 +975,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       </details>
 
       <div id="finalScore" class="hidden"></div>
-      <button class="gray finalBack" onclick="closeResult()">試合画面に戻る</button>
+      <button class="gray finalBack" onclick="returnFromResultToGame()">← 試合に戻って修正</button>
     </div>
 
     <!-- 既存JS互換用の非表示要素 -->
@@ -1069,8 +1095,6 @@ function addBenchInput(no='',name=''){
     '<span class="small">ベンチ</span>';
   wrap.appendChild(row);
 }
-addBenchInput(); addBenchInput(); addBenchInput();
-
 function collectBench(){
   benchPlayers=[]; benchNums=[];
   for(let i=0;i<benchInputCount;i++){
@@ -1093,6 +1117,11 @@ function colorPreview(){
   document.getElementById('oppPants').style.background=op;
 }
 colorPreview();
+addBenchInput();
+addBenchInput();
+addBenchInput();
+addResumeGameButton();
+updateResumeGameButton();
 
 
 function hexToRgb(hex){
@@ -1131,6 +1160,79 @@ function applyGameTheme(){
   document.body.style.setProperty('--themeBody',mid);
 }
 
+
+function returnToStart(){
+  const activeGame=document.getElementById('s3')?.classList.contains('active');
+  const result=document.getElementById('resultPanel');
+  const resultOpen=result && !result.classList.contains('hidden');
+
+  if(activeGame || resultOpen){
+    openStartConfirm();
+    return;
+  }
+  show('s1');
+}
+
+function openStartConfirm(){
+  if(document.getElementById('startConfirmBox'))return;
+  const box=document.createElement('div');
+  box.id='startConfirmBox';
+  box.className='startConfirmBox';
+  box.innerHTML=
+    '<div class="startConfirmCard">'+
+      '<h3>スタート画面へ戻る？</h3>'+
+      '<p>試合データは消しません。スタート画面から進行中の試合へ戻れます。</p>'+
+      '<div class="startConfirmBtns">'+
+        '<button class="gray" onclick="closeStartConfirm()">キャンセル</button>'+
+        '<button onclick="goStartKeepGame()">スタートへ戻る</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(box);
+}
+
+function closeStartConfirm(){
+  const box=document.getElementById('startConfirmBox');
+  if(box)box.remove();
+}
+
+function goStartKeepGame(){
+  closeStartConfirm();
+  const result=document.getElementById('resultPanel');
+  if(result)result.classList.add('hidden');
+  show('s1');
+}
+
+function returnFromResultToGame(){
+  const result=document.getElementById('resultPanel');
+  if(result)result.classList.add('hidden');
+  show('s3');
+  render();
+}
+
+function addResumeGameButton(){
+  const s1=document.getElementById('s1');
+  if(!s1 || document.getElementById('resumeGameBtn'))return;
+  const card=s1.querySelector('.card');
+  if(!card)return;
+
+  const btn=document.createElement('button');
+  btn.id='resumeGameBtn';
+  btn.className='gray';
+  btn.textContent='▶ 進行中の試合へ戻る';
+  btn.onclick=function(){ show('s3'); render(); };
+  btn.style.display='none';
+  card.appendChild(btn);
+}
+
+function updateResumeGameButton(){
+  const btn=document.getElementById('resumeGameBtn');
+  if(!btn || typeof st==='undefined')return;
+  const started = st.inning>1 || st.my>0 || st.opp>0 || st.o>0 ||
+    (st.bases && st.bases.some(Boolean)) ||
+    (typeof playEvents!=='undefined' && playEvents.length>0);
+  btn.style.display = started ? 'block' : 'none';
+}
+
 function show(id){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -1147,6 +1249,7 @@ function show(id){
     document.body.style.removeProperty('--themeBody');
   }
   window.scrollTo(0,0);
+  if(id==='s1')updateResumeGameButton();
 }
 function go2(){show('s2')}
 
