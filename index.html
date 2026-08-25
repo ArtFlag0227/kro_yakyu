@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.12.1</title>
+<title>クロ野球 Ver.12.2</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -658,7 +658,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </head>
 <body>
 <button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.12.1</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.12.2</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1326,8 +1326,14 @@ function nextBatter(){
 }
 function ball(){
   save(); st.b++;
-  if(st.b>=4){log(players[st.batter]+' 四球');nextBatter();}
-  else log('ボール');
+  if(st.b>=4){
+    const n=currentBatterName();
+    log(n+' 四球');
+    recordPlay('四球',n);
+    forceOneBaseAdvance();
+    st.bases[0]=n;
+    nextBatter();
+  }else log('ボール');
   render();
 }
 function strike(){
@@ -2191,7 +2197,9 @@ function hit(kind){
   const detail=document.getElementById('hitDetail').value;
   advanceDefault(bases);
   st.bases[bases-1]=n;
-  log(n+' '+area+(detail?detail:'')+' '+kind);
+  const result=area+(detail?detail:'')+' '+kind;
+  log(n+' '+result);
+  recordPlay(result,n);
   nextBatter();
   render();
 }
