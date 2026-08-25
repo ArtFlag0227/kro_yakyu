@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.10</title>
+<title>クロ野球 Ver.10.1</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -228,10 +228,77 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
   .lineupRow input,.lineupRow select{padding:6px 4px;font-size:11px}
 }
 
+
+/* ===== Ver.10.1 current batter + in-game score ===== */
+.attackInfo{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:8px;
+  align-items:center;
+  margin:4px 0 6px;
+}
+.currentBatterCard{
+  background:#151515;
+  border:1px solid #ffffff2a;
+  border-radius:9px;
+  padding:7px 9px;
+  min-width:0;
+}
+.currentBatterName{
+  font-size:13px;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.currentBatterHistory{
+  margin-top:3px;
+  font-size:10px;
+  color:#bbb;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.scoreToggle{
+  margin:0!important;
+  width:auto!important;
+  min-width:110px;
+  padding:8px 10px!important;
+}
+.liveScorePanel{
+  background:#111;
+  border:1px solid #ffffff2b;
+  border-radius:9px;
+  padding:7px;
+  margin:5px 0 7px;
+}
+.liveScorePanel.hidden{display:none!important}
+.liveScoreTable{
+  width:100%;
+  border-collapse:collapse;
+  font-size:10px;
+}
+.liveScoreTable th,.liveScoreTable td{
+  border:1px solid #3d3d3d;
+  padding:4px 5px;
+  text-align:center;
+}
+.liveScoreTable th{background:#242424}
+@media (orientation:landscape){
+  .attackInfo{grid-template-columns:minmax(0,1fr) auto;margin:3px 0 4px}
+  .currentBatterCard{padding:5px 7px}
+  .currentBatterName{font-size:12px}
+  .currentBatterHistory{font-size:9px}
+  .scoreToggle{min-width:96px;padding:6px 8px!important;font-size:10px!important}
+  .liveScorePanel{padding:5px;margin:3px 0 5px}
+  .liveScoreTable{font-size:9px}
+  .liveScoreTable th,.liveScoreTable td{padding:3px 4px}
+}
+
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.10</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.10.1</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -330,6 +397,18 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
     </div>
     <div class="big" id="inning">1回表</div>
     <div class="attack" id="attack"></div>
+
+    <div class="attackInfo">
+      <div class="currentBatterCard">
+        <div class="currentBatterName" id="currentBatterName">現在の打者</div>
+        <div class="currentBatterHistory" id="currentBatterHistory">この試合の打席結果：まだありません</div>
+      </div>
+      <button class="gray scoreToggle" onclick="toggleLiveScore()">途中スコア</button>
+    </div>
+
+    <div class="liveScorePanel hidden" id="liveScorePanel">
+      <div id="liveScoreTable"></div>
+    </div>
 
     <div class="scoreboard">
       <span class="teamBadge" id="myName">クロチーム</span>
@@ -1039,6 +1118,65 @@ function runnerAction(action){
   render();
 }
 
+
+function getCurrentBatterLabel(){
+  if(st.top){
+    const no=nums[st.batter] ? '#'+nums[st.batter]+' ' : '';
+    return no+players[st.batter]+'　'+throws[st.batter]+'投'+bats[st.batter]+'打';
+  }else{
+    const no=oppNums[st.oppBatter] ? '#'+oppNums[st.oppBatter]+' ' : '';
+    const name=oppPlayers[st.oppBatter] || ('相手 '+(st.oppBatter+1)+'番');
+    return no+name+'　'+oppThrows[st.oppBatter]+'投'+oppBats[st.oppBatter]+'打';
+  }
+}
+function getBatterHistory(){
+  const player=currentBatterName();
+  const side=st.top?'my':'opp';
+  const hist=playEvents.filter(e=>e.side===side && e.player===player && e.result);
+  return hist.map(e=>e.result);
+}
+function toggleLiveScore(){
+  const panel=document.getElementById('liveScorePanel');
+  panel.classList.toggle('hidden');
+  renderLiveScore();
+}
+function renderLiveScore(){
+  const wrap=document.getElementById('liveScoreTable');
+  if(!wrap)return;
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+  const maxInn=Math.max(1,st.inning);
+
+  let html='<table class="liveScoreTable"><tr><th>TEAM</th>';
+  for(let i=1;i<=maxInn;i++)html+='<th>'+i+'</th>';
+  html+='<th>計</th></tr>';
+
+  html+='<tr><th>'+my+'</th>';
+  for(let i=1;i<=maxInn;i++)html+='<td>'+(inningRuns.my[String(i)]||0)+'</td>';
+  html+='<td><b>'+st.my+'</b></td></tr>';
+
+  html+='<tr><th>'+op+'</th>';
+  for(let i=1;i<=maxInn;i++)html+='<td>'+(inningRuns.opp[String(i)]||0)+'</td>';
+  html+='<td><b>'+st.opp+'</b></td></tr></table>';
+
+  wrap.innerHTML=html;
+}
+function renderCurrentBatterSummary(){
+  const nameEl=document.getElementById('currentBatterName');
+  const histEl=document.getElementById('currentBatterHistory');
+  if(!nameEl||!histEl)return;
+
+  nameEl.textContent='打者：'+getCurrentBatterLabel();
+
+  const hist=getBatterHistory();
+  histEl.textContent=hist.length
+    ? 'この試合：'+hist.join(' ｜ ')
+    : 'この試合の打席結果：まだありません';
+
+  const live=document.getElementById('liveScorePanel');
+  if(live && !live.classList.contains('hidden')) renderLiveScore();
+}
+
 function currentBatterName(){
   if(st.top) return players[st.batter];
   const name=oppPlayers[st.oppBatter];
@@ -1298,6 +1436,8 @@ function render(){
       b.classList.remove('show');
     }
   });
+
+    renderCurrentBatterSummary();
 
   const rc=document.getElementById('runnerControls');
   rc.innerHTML='';
