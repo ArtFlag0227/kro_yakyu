@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.11.4</title>
+<title>クロ野球 Ver.11.5</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -515,10 +515,107 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
   .resultsTitle{font-size:17px}
 }
 
+
+/* ===== Ver.11.5 bunt quick menu + final result ===== */
+.buntWrap{position:relative;min-width:0}
+.buntWrap>.strategyBtn{width:100%;height:100%}
+.buntQuick{
+  position:absolute;
+  left:0;
+  bottom:calc(100% + 6px);
+  z-index:900;
+  width:260px;
+  padding:6px;
+  border:1px solid #666;
+  border-radius:9px;
+  background:#111;
+  box-shadow:0 8px 28px #000c;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+}
+.buntQuick.hidden{display:none!important}
+.buntQuick button{
+  min-height:32px!important;
+  margin:0!important;
+  padding:5px!important;
+  font-size:10px!important;
+}
+.resultPanel{
+  position:fixed;
+  inset:0;
+  z-index:1200;
+  overflow:auto;
+  background:#0c0c0c;
+  padding:12px;
+}
+.resultPanel.hidden{display:none!important}
+.finalHero{
+  border:1px solid #ffffff38;
+  border-radius:12px;
+  padding:14px;
+  text-align:center;
+  background:#171717;
+  margin-bottom:8px;
+}
+.finalLabel{font-size:11px;color:#aaa;font-weight:800}
+.finalMatch{font-size:30px;font-weight:1000;margin:4px 0}
+.finalMeta{font-size:11px;color:#bbb}
+.finalGrid{
+  display:grid;
+  grid-template-columns:1.3fr .7fr;
+  gap:8px;
+}
+.finalCard{
+  border:1px solid #ffffff30;
+  border-radius:10px;
+  padding:9px;
+  background:#151515;
+  margin-bottom:8px;
+}
+.finalCardTitle{
+  font-size:13px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+.finalSummary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+}
+.finalStat{
+  border:1px solid #444;
+  border-radius:8px;
+  padding:7px 4px;
+  text-align:center;
+}
+.finalStat span{display:block;font-size:9px;color:#aaa}
+.finalStat b{display:block;font-size:18px;margin-top:2px}
+.finalDetails summary{font-weight:900;cursor:pointer}
+.finalBack{max-width:420px;margin:4px auto 12px!important;display:block}
+.finalBatTable{
+  width:100%;
+  border-collapse:collapse;
+  min-width:700px;
+  font-size:10px;
+}
+.finalBatTable th,.finalBatTable td{
+  border:1px solid #444;
+  padding:5px 4px;
+  text-align:center;
+}
+.finalBatTable th{background:#272727}
+.finalBatTable td.name{text-align:left;font-weight:800}
+@media (orientation:portrait){
+  .buntQuick{position:fixed;left:5vw;bottom:14px;width:90vw}
+  .finalGrid{grid-template-columns:1fr}
+  .finalMatch{font-size:23px}
+}
+
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.4</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.5</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -727,7 +824,17 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
     <section class="dashStrategy panel">
       <div class="panelHead"><b>作戦・交代</b></div>
       <div class="actionGrid five">
-        <button class="strategyBtn" onclick="openBuntResult()">バント</button>
+        <div class="buntWrap">
+          <button class="strategyBtn" onclick="toggleBuntQuick()">バント</button>
+          <div class="buntQuick hidden" id="buntQuick">
+            <button onclick="buntQuickResult('犠打成功')">犠打成功</button>
+            <button class="green" onclick="buntQuickResult('バントヒット')">バントヒット</button>
+            <button class="yellow" onclick="buntQuickResult('スクイズ成功')">スクイズ成功</button>
+            <button class="green" onclick="buntQuickResult('スクイズヒット')">スクイズヒット</button>
+            <button class="red" onclick="buntQuickResult('バント失敗')">バント失敗</button>
+            <button class="gray" onclick="toggleBuntQuick(false)">閉じる</button>
+          </div>
+        </div>
         <button class="yellow" onclick="openPinchHitter()">代打</button>
         <button class="blue" onclick="openEnemyPitcherChange()">敵 投手交代</button>
         <button class="gray" onclick="undo()">ひとつ戻す</button>
@@ -789,17 +896,42 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
     </details>
 
     <!-- 試合終了結果 -->
-    <div class="resultPanel hidden panel" id="resultPanel">
-      <h2>試合結果・スコア</h2>
-      <div id="finalScore"></div>
-      <div id="inningScore"></div>
-      <div class="sectionTitle">打撃結果</div>
-      <div id="battingSummary"></div>
-      <div class="sectionTitle">交代・守備変更履歴</div>
-      <div id="changeHistory"></div>
-      <div class="sectionTitle">プレー履歴</div>
-      <div id="playSummary"></div>
-      <button class="gray" onclick="closeResult()">試合画面に戻る</button>
+    <div class="resultPanel hidden" id="resultPanel">
+      <div class="finalHero">
+        <div class="finalLabel">試合終了</div>
+        <div class="finalMatch" id="finalHeroScore">クロチーム 0 − 0 相手チーム</div>
+        <div class="finalMeta" id="finalHeroMeta"></div>
+      </div>
+
+      <div class="finalGrid">
+        <section class="finalCard">
+          <div class="finalCardTitle">イニングスコア</div>
+          <div id="inningScore"></div>
+        </section>
+
+        <section class="finalCard">
+          <div class="finalCardTitle">試合サマリー</div>
+          <div class="finalSummary" id="finalSummary"></div>
+        </section>
+      </div>
+
+      <section class="finalCard">
+        <div class="finalCardTitle">自チーム 打撃成績</div>
+        <div class="tableScroll"><div id="battingSummary"></div></div>
+      </section>
+
+      <details class="finalCard finalDetails">
+        <summary>交代・守備変更履歴</summary>
+        <div id="changeHistory"></div>
+      </details>
+
+      <details class="finalCard finalDetails">
+        <summary>全プレー履歴</summary>
+        <div id="playSummary"></div>
+      </details>
+
+      <div id="finalScore" class="hidden"></div>
+      <button class="gray finalBack" onclick="closeResult()">試合画面に戻る</button>
     </div>
 
     <!-- 既存JS互換用の非表示要素 -->
@@ -1386,6 +1518,99 @@ function toggleLiveScore(){
   renderGameScoreBoard();
 }
 
+
+
+function toggleBuntQuick(force){
+  const p=document.getElementById('buntQuick');
+  if(!p)return;
+  const open = typeof force==='boolean' ? force : p.classList.contains('hidden');
+  p.classList.toggle('hidden', !open);
+}
+
+function buntQuickResult(kind){
+  toggleBuntQuick(false);
+
+  // Use the app's existing bunt workflow so runner/out logic stays compatible.
+  openBuntResult();
+
+  const panel=document.getElementById('irregularPanel');
+  if(!panel)return;
+
+  // Find the existing result button whose label best matches the requested play.
+  const buttons=[...panel.querySelectorAll('button')];
+  const aliases={
+    '犠打成功':['犠打成功','犠打','成功'],
+    'バントヒット':['バントヒット','ヒット','セーフ'],
+    'スクイズ成功':['スクイズ成功','スクイズ','成功'],
+    'スクイズヒット':['スクイズヒット','セーフティ','ヒット'],
+    'バント失敗':['バント失敗','失敗','アウト']
+  };
+  const words=aliases[kind]||[kind];
+
+  let target=null;
+  for(const w of words){
+    target=buttons.find(b=>(b.textContent||'').includes(w));
+    if(target)break;
+  }
+  if(target){
+    target.click();
+  }else{
+    // If an exact legacy action cannot be found, leave the existing bunt result
+    // panel open rather than guessing baseball state changes.
+    panel.classList.remove('hidden');
+    const title=document.getElementById('irregularTitle');
+    if(title)title.textContent='バント結果：'+kind;
+  }
+}
+
+function buildFinalBattingTable(){
+  let html='<table class="finalBatTable"><tr><th>打順</th><th>選手</th><th>打席</th><th>安打</th><th>本塁打</th><th>打席結果</th></tr>';
+  for(let i=0;i<9;i++){
+    const name=(players[i]||'').trim() || ('選手'+(i+1));
+    const ev=playerEvents('my',name);
+    const hits=ev.filter(r=>['単打','二塁打','三塁打','本塁打','バントヒット'].some(w=>r.includes(w))).length;
+    const hrs=ev.filter(r=>r.includes('本塁打')).length;
+    html+='<tr><td>'+(i+1)+'</td><td class="name">'+name+'</td><td>'+ev.length+'</td><td>'+hits+'</td><td>'+hrs+'</td><td>'+ev.join(' ｜ ')+'</td></tr>';
+  }
+  html+='</table>';
+  return html;
+}
+
+function renderFinalDashboard(){
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+
+  const hero=document.getElementById('finalHeroScore');
+  if(hero)hero.textContent=my+' '+st.my+' − '+st.opp+' '+op;
+
+  const meta=document.getElementById('finalHeroMeta');
+  if(meta)meta.textContent=st.inning+'回'+(st.top?'表':'裏')+' 終了時点';
+
+  // Reuse the reliable in-game inning scoreboard, then copy it into result page.
+  renderGameScoreBoard();
+  const board=document.getElementById('gameScoreBoard');
+  const inning=document.getElementById('inningScore');
+  if(board&&inning)inning.innerHTML=board.innerHTML;
+
+  const myEvents=playEvents.filter(e=>e.side==='my'&&e.result);
+  const hits=myEvents.filter(e=>['単打','二塁打','三塁打','本塁打','バントヒット'].some(w=>(e.result||'').includes(w))).length;
+  const hrs=myEvents.filter(e=>(e.result||'').includes('本塁打')).length;
+  const strikeouts=myEvents.filter(e=>(e.result||'').includes('三振')).length;
+
+  const summary=document.getElementById('finalSummary');
+  if(summary){
+    summary.innerHTML=
+      '<div class="finalStat"><span>得点</span><b>'+st.my+'</b></div>'+
+      '<div class="finalStat"><span>安打</span><b>'+hits+'</b></div>'+
+      '<div class="finalStat"><span>本塁打</span><b>'+hrs+'</b></div>'+
+      '<div class="finalStat"><span>三振</span><b>'+strikeouts+'</b></div>'+
+      '<div class="finalStat"><span>失点</span><b>'+st.opp+'</b></div>'+
+      '<div class="finalStat"><span>得失点差</span><b>'+((st.my||0)-(st.opp||0))+'</b></div>';
+  }
+
+  const batting=document.getElementById('battingSummary');
+  if(batting)batting.innerHTML=buildFinalBattingTable();
+}
 
 function classifyBatResult(result){
   if(!result)return '';
@@ -2184,6 +2409,7 @@ function saveOpponentEditor(){
 
 
 function finishGame(){
+  setTimeout(renderFinalDashboard,0);
   renderResult();
   document.getElementById('resultPanel').classList.remove('hidden');
   document.getElementById('resultPanel').scrollIntoView({behavior:'smooth'});
