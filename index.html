@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.11.5</title>
+<title>クロ野球 Ver.11.6</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -615,7 +615,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.5</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.6</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1305,39 +1305,40 @@ function buntOutcome(kind){
   save();
   const n=currentBatterName();
   st.lastScored=[];
+
   if(kind==='sac'){
     forceOneBaseAdvance();
     log(n+' 犠打成功');
     recordPlay('犠打成功',n);
     doOut();
+
   }else if(kind==='hit'){
     advanceDefault(1);
     st.bases[0]=n;
     log(n+' バントヒット');
     recordPlay('バントヒット',n);
     nextBatter();
+
   }else if(kind==='error'){
     forceOneBaseAdvance();
     st.bases[0]=n;
     log(n+' バント・失策で出塁');
     recordPlay('バント失策出塁',n);
     nextBatter();
+
   }else if(kind==='fc'){
     forceOneBaseAdvance();
     st.bases[0]=n;
     log(n+' バント・野選で出塁');
     recordPlay('バント野選出塁',n);
     nextBatter();
+
   }else if(kind==='out'){
     log(n+' バント失敗アウト');
     recordPlay('バント失敗アウト',n);
     doOut();
-    advanceDefault(1);
-    st.bases[0]=n;
-    log(n+' スクイズ内野安打');
-    recordPlay('スクイズ内野安打',n);
-    nextBatter();
   }
+
   closeIrregular();
   render();
 }
@@ -1530,37 +1531,57 @@ function toggleBuntQuick(force){
 function buntQuickResult(kind){
   toggleBuntQuick(false);
 
-  // Use the app's existing bunt workflow so runner/out logic stays compatible.
-  openBuntResult();
+  const n=currentBatterName();
+  st.lastScored=[];
 
-  const panel=document.getElementById('irregularPanel');
-  if(!panel)return;
+  if(kind==='犠打成功'){
+    save();
+    forceOneBaseAdvance();
+    log(n+' 犠打成功');
+    recordPlay('犠打成功',n);
+    doOut();
 
-  // Find the existing result button whose label best matches the requested play.
-  const buttons=[...panel.querySelectorAll('button')];
-  const aliases={
-    '犠打成功':['犠打成功','犠打','成功'],
-    'バントヒット':['バントヒット','ヒット','セーフ'],
-    'スクイズ成功':['スクイズ成功','スクイズ','成功'],
-    'スクイズヒット':['スクイズヒット','セーフティ','ヒット'],
-    'バント失敗':['バント失敗','失敗','アウト']
-  };
-  const words=aliases[kind]||[kind];
+  }else if(kind==='バントヒット'){
+    save();
+    advanceDefault(1);
+    st.bases[0]=n;
+    log(n+' バントヒット');
+    recordPlay('バントヒット',n);
+    nextBatter();
 
-  let target=null;
-  for(const w of words){
-    target=buttons.find(b=>(b.textContent||'').includes(w));
-    if(target)break;
+  }else if(kind==='スクイズ成功'){
+    if(!st.bases[2]){
+      alert('三塁ランナーがいません');
+      return;
+    }
+    save();
+    // 三塁走者は得点、他走者は1つ進塁、打者はアウト。
+    forceOneBaseAdvance();
+    log(n+' スクイズ成功');
+    recordPlay('スクイズ成功',n);
+    doOut();
+
+  }else if(kind==='スクイズヒット'){
+    if(!st.bases[2]){
+      alert('三塁ランナーがいません');
+      return;
+    }
+    save();
+    // 三塁走者は得点、他走者は1つ進塁、打者は一塁へ。
+    advanceDefault(1);
+    st.bases[0]=n;
+    log(n+' スクイズヒット');
+    recordPlay('スクイズヒット',n);
+    nextBatter();
+
+  }else if(kind==='バント失敗'){
+    save();
+    log(n+' バント失敗アウト');
+    recordPlay('バント失敗アウト',n);
+    doOut();
   }
-  if(target){
-    target.click();
-  }else{
-    // If an exact legacy action cannot be found, leave the existing bunt result
-    // panel open rather than guessing baseball state changes.
-    panel.classList.remove('hidden');
-    const title=document.getElementById('irregularTitle');
-    if(title)title.textContent='バント結果：'+kind;
-  }
+
+  render();
 }
 
 function buildFinalBattingTable(){
