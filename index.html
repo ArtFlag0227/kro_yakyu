@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.13.1</title>
+<title>クロ野球 Ver.13.2</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -844,11 +844,218 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
   .replayResult{font-size:18px;min-height:50px}
 }
 
+
+/* ===== Ver.13.2 retro game-style replay ===== */
+.replayBody{
+  grid-template-columns:minmax(0,1fr) 300px!important;
+  align-items:start;
+}
+.stadiumCard{
+  background:#171717!important;
+  padding:6px!important;
+}
+.stadiumTitle{display:none!important}
+
+.stadiumView{
+  aspect-ratio:4/3!important;
+  max-height:76vh;
+  background:
+    linear-gradient(to bottom,#19a64a 0 72%,#a87331 72% 100%)!important;
+  border:6px solid #17395f!important;
+  border-radius:2px!important;
+  box-shadow:
+    inset 0 0 0 5px #1c6ad3,
+    0 10px 30px #000b!important;
+  overflow:hidden!important;
+  image-rendering:pixelated;
+}
+
+/* outfield wall / stands */
+.stadiumView::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;
+  height:15%;
+  background:
+    repeating-linear-gradient(135deg,#0a79c8 0 5px,#071f55 5px 10px);
+  border-bottom:10px solid #1761d1;
+  z-index:1;
+}
+.stadiumView::after{
+  content:"";
+  position:absolute;
+  left:39%;top:2%;
+  width:22%;height:9%;
+  background:#2d3b3f;
+  border-left:10px solid #50c946;
+  border-right:10px solid #50c946;
+  z-index:2;
+}
+
+.outfieldArc,.infieldGrass{display:none!important}
+
+.infieldDirt{
+  left:39%!important;
+  top:50%!important;
+  width:22%!important;
+  height:25%!important;
+  background:#9a632d!important;
+  border-radius:0!important;
+  transform:rotate(45deg)!important;
+  box-shadow:none!important;
+}
+.foulLine{
+  height:3px!important;
+  background:#fff!important;
+  bottom:8%!important;
+}
+.leftLine{left:49%!important;transform:rotate(-31deg)!important}
+.rightLine{right:49%!important;transform:rotate(31deg)!important}
+
+/* bases are simple white pixel diamonds */
+.replayBase{
+  width:17px!important;height:17px!important;
+  border-radius:0!important;
+  background:#fff!important;
+  border:0!important;
+  color:transparent!important;
+  box-shadow:2px 2px 0 #555!important;
+}
+.rbHome{left:50%!important;bottom:7%!important;margin-left:-8px!important}
+.rb1{left:61%!important;bottom:26%!important}
+.rb2{left:50%!important;bottom:42%!important;margin-left:-8px!important}
+.rb3{right:61%!important;bottom:26%!important}
+
+/* crude pixel-player sprite from CSS */
+.fielder,.replayBatter,.replayRunner{
+  width:28px!important;height:34px!important;
+  border:0!important;border-radius:0!important;
+  background:
+    linear-gradient(#111 0 19%,#e7b47c 19% 40%,#f7f7f7 40% 72%,#111 72% 100%)!important;
+  color:transparent!important;
+  box-shadow:
+    -5px 22px 0 -2px #111,
+     5px 22px 0 -2px #111!important;
+}
+.fielder::before,.replayBatter::before,.replayRunner::before{
+  content:"";
+  position:absolute;
+  left:5px;top:-5px;
+  width:18px;height:7px;
+  background:#111;
+}
+.fielder::after,.replayBatter::after,.replayRunner::after{
+  content:"";
+  position:absolute;
+  left:-5px;top:15px;
+  width:38px;height:7px;
+  background:linear-gradient(90deg,#111 0 22%,transparent 22% 78%,#111 78% 100%);
+}
+
+/* positions tuned for the classic behind-catcher view */
+.fC{left:50%!important;bottom:10%!important;margin-left:-14px!important}
+.fP{left:50%!important;bottom:31%!important;margin-left:-14px!important}
+.f1B{left:67%!important;bottom:28%!important}
+.f2B{left:60%!important;bottom:45%!important}
+.f3B{right:67%!important;bottom:28%!important}
+.fSS{right:60%!important;bottom:45%!important}
+.fLF{right:72%!important;top:29%!important}
+.fCF{left:50%!important;top:20%!important;margin-left:-14px!important}
+.fRF{left:72%!important;top:29%!important}
+
+.replayBatter{
+  left:54%!important;bottom:7%!important;
+  background:
+    linear-gradient(#063b95 0 19%,#e7b47c 19% 40%,#1b70e9 40% 72%,#063b95 72% 100%)!important;
+}
+.replayRunner{
+  background:
+    linear-gradient(#f0bd20 0 19%,#e7b47c 19% 40%,#f8d64b 40% 72%,#4a3710 72% 100%)!important;
+  z-index:25!important;
+}
+.rr1{left:61%!important;bottom:24%!important}
+.rr2{left:50%!important;bottom:40%!important;margin-left:-14px!important}
+.rr3{right:61%!important;bottom:24%!important}
+
+.replayBall{
+  width:8px!important;height:8px!important;
+  background:#fff!important;
+  box-shadow:0 0 0 1px #bbb!important;
+}
+
+/* old-game score boxes */
+.replayInfoCard{
+  background:#090909!important;
+  border:2px solid #ddd!important;
+  border-radius:0!important;
+  color:#fff!important;
+}
+.replayInning{font-family:monospace!important;color:#fff!important;font-size:13px!important}
+.replayPlayer{font-family:monospace!important;font-size:22px!important}
+.replayResult{font-family:monospace!important;font-size:18px!important}
+.replayMini div{
+  background:#050505!important;
+  border:2px solid #ddd!important;
+  border-radius:0!important;
+}
+.replayLastPlay{
+  background:#050505!important;
+  border:2px solid #ddd!important;
+  border-radius:0!important;
+  font-family:monospace!important;
+}
+
+/* remove "UI mockup" feel inside the field */
+.cameraLabel{display:none!important}
+.replayPhase{
+  top:auto!important;bottom:12px!important;left:12px!important;
+  border-radius:0!important;
+  background:#050505!important;
+  border:2px solid #ddd!important;
+  font-family:monospace!important;
+}
+.replayCallout{
+  border-radius:0!important;
+  font-family:monospace!important;
+  background:#050505!important;
+  border:3px solid #fff!important;
+  font-size:24px!important;
+}
+
+/* small game score overlay in the field */
+.retroScoreOverlay{
+  position:absolute;left:12px;top:18%;
+  z-index:60;
+  background:#050505;
+  color:#fff;
+  border:3px solid #fff;
+  padding:6px 10px;
+  font:900 15px/1.15 monospace;
+  letter-spacing:.05em;
+}
+.retroBatterOverlay{
+  position:absolute;right:12px;bottom:12px;
+  z-index:60;
+  background:#050505;
+  color:#fff;
+  border:3px solid #fff;
+  padding:7px 10px;
+  font:900 13px/1.25 monospace;
+  min-width:135px;
+}
+
+@media (orientation:landscape){
+  .replayPage{padding:4px!important}
+  .replayHeader{margin-bottom:4px!important}
+  .replayBody{grid-template-columns:minmax(0,1fr) 280px!important}
+  .stadiumView{max-height:78vh}
+}
+
 </style>
 </head>
 <body>
 <button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.1</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.2</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1262,6 +1469,8 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
           <div class="replayBatter" id="replayBatter">打</div>
           <div class="replayBall" id="replayBall">●</div>
 
+          <div class="retroScoreOverlay" id="retroScoreOverlay">1回表<br>0 - 0</div>
+          <div class="retroBatterOverlay" id="retroBatterOverlay">打者<br>---</div>
           <div class="replayCallout" id="replayCallout"></div>
           <div class="replayPhase" id="replayPhase"></div>
           <div class="cameraLabel">捕手後方・上段視点</div>
@@ -2309,6 +2518,8 @@ function renderReplayOpening(){
   document.getElementById('replayResult').textContent='最初のプレーから振り返ります';
   document.getElementById('replayOuts').textContent='0';
   document.getElementById('replayIndex').textContent='0 / '+replayFrames.length;
+  const rso=document.getElementById('retroScoreOverlay'); if(rso)rso.innerHTML='1回表<br>0 - 0';
+  const rbo=document.getElementById('retroBatterOverlay'); if(rbo)rbo.innerHTML='打者<br>---';
   document.getElementById('replayLog').innerHTML='';
   const lp=document.getElementById('replayLastPlay'); if(lp)lp.textContent='次のプレーをどうぞ';
   clearReplayStages();
@@ -2498,6 +2709,10 @@ function playReplaySequence(pos){
   document.getElementById('replayOuts').textContent=b.outs;
   document.getElementById('replayIndex').textContent=(pos+1)+' / '+replayFrames.length;
   document.getElementById('replayLastPlay').textContent=(e.player||'')+'　'+(e.result||'');
+  const rso=document.getElementById('retroScoreOverlay');
+  if(rso)rso.innerHTML=(e.inning||b.inning)+'回'+(e.half||b.half)+'<br>'+b.my+' - '+b.opp;
+  const rbo=document.getElementById('retroBatterOverlay');
+  if(rbo)rbo.innerHTML='打者<br>'+(e.player||'---');
 
   appendReplayHistory(pos,e);
 
