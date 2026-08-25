@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.12.2</title>
+<title>クロ野球 Ver.13</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -654,11 +654,98 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 .startConfirmBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .startConfirmBtns button{margin:0!important}
 
+
+/* ===== Ver.13 replay ===== */
+.finalActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:720px;margin:8px auto 12px}
+.finalActions button{margin:0!important}
+.replayLaunch{background:#0b8f68!important;font-weight:900!important}
+.replayPage{min-height:100vh;background:linear-gradient(#0b0b0b,#141414);padding:8px}
+.replayHeader{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+  background:#101010;border:1px solid #3a3a3a;border-radius:10px;padding:7px 10px;margin-bottom:7px
+}
+.replayBack{width:auto!important;margin:0!important;padding:6px 10px!important}
+.replayScore{text-align:center;font-size:20px;font-weight:1000}
+.replayCount{font-size:12px;font-weight:900}
+.replayBody{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.7fr);gap:8px}
+.stadiumCard,.replayInfoCard{background:#111;border:1px solid #3d3d3d;border-radius:11px;padding:8px}
+.stadiumTitle{font-size:12px;font-weight:900;margin-bottom:5px}
+.stadiumView{
+  position:relative;overflow:hidden;width:100%;aspect-ratio:16/9;
+  border-radius:10px;border:2px solid #315b3a;
+  background:linear-gradient(#27683a 0%,#1f5c33 56%,#7b5a2e 57%,#7b5a2e 100%);
+  perspective:700px;
+}
+.outfieldArc{
+  position:absolute;left:10%;right:10%;top:-40%;height:92%;
+  border:4px solid #d7d7d766;border-bottom:0;border-radius:50% 50% 0 0;
+}
+.infieldGrass{
+  position:absolute;left:32%;top:42%;width:36%;height:40%;
+  background:#2e713f;transform:rotate(45deg);border:2px solid #ffffff20;
+}
+.infieldDirt{
+  position:absolute;left:38%;top:50%;width:24%;height:30%;
+  background:#8c6636;transform:rotate(45deg);border-radius:10px
+}
+.foulLine{position:absolute;bottom:9%;width:58%;height:2px;background:#fff9;transform-origin:bottom center}
+.leftLine{left:50%;transform:rotate(-28deg)}
+.rightLine{right:50%;transform:rotate(28deg)}
+.replayBase{
+  position:absolute;width:22px;height:22px;background:#fff;color:#222;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;
+  transform:rotate(45deg);box-shadow:0 2px 6px #0009;z-index:8
+}
+.replayBase::first-letter{transform:rotate(-45deg)}
+.rbHome{left:50%;bottom:7%;margin-left:-11px}
+.rb1{left:62%;bottom:24%}
+.rb2{left:50%;bottom:39%;margin-left:-11px}
+.rb3{right:62%;bottom:24%}
+.fielder{
+  position:absolute;width:26px;height:26px;border-radius:50%;
+  background:#cfd5dd;color:#111;border:2px solid #222;
+  display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:1000;z-index:7;
+  box-shadow:0 2px 6px #0008
+}
+.fP{left:50%;bottom:33%;margin-left:-13px}.fC{left:50%;bottom:10%;margin-left:-13px}
+.f1B{left:66%;bottom:31%}.f2B{left:58%;bottom:43%}.f3B{right:66%;bottom:31%}.fSS{right:58%;bottom:43%}
+.fLF{right:72%;top:19%}.fCF{left:50%;top:12%;margin-left:-13px}.fRF{left:72%;top:19%}
+.replayRunner{
+  position:absolute;width:29px;height:29px;border-radius:50%;
+  background:#ffd21c;color:#111;border:2px solid #fff;
+  display:none;align-items:center;justify-content:center;font-size:8px;font-weight:1000;z-index:20;
+  box-shadow:0 2px 7px #000b
+}
+.rr1{left:63%;bottom:22%}.rr2{left:50%;bottom:37%;margin-left:-14px}.rr3{right:63%;bottom:22%}
+.replayBatter{
+  position:absolute;left:53%;bottom:8%;width:26px;height:26px;border-radius:50%;
+  background:#0bd39c;color:#082016;border:2px solid #fff;
+  display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:1000;z-index:20
+}
+.replayBall{
+  position:absolute;left:51%;bottom:14%;font-size:15px;color:#fff;z-index:30;
+  text-shadow:0 1px 4px #000;transition:all .65s ease;opacity:0
+}
+.cameraLabel{position:absolute;right:8px;bottom:7px;font-size:8px;color:#ffffff77}
+.replayInfoCard{display:flex;flex-direction:column;min-width:0}
+.replayInning{font-size:12px;color:#aaa}.replayPlayer{font-size:22px;font-weight:1000;margin-top:3px}
+.replayResult{font-size:15px;font-weight:900;margin:6px 0 9px;color:#f2f2f2;min-height:42px}
+.replayMini{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
+.replayMini div{border:1px solid #444;border-radius:8px;text-align:center;padding:6px}
+.replayMini span{display:block;font-size:9px;color:#aaa}.replayMini b{font-size:16px}
+.replayLog{flex:1;min-height:90px;max-height:190px;overflow:auto;border:1px solid #333;border-radius:8px;padding:6px;font-size:10px;color:#bbb}
+.replayControls{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.replayControls button{margin:0!important;min-height:34px!important;font-size:11px!important}
+@media (orientation:portrait){
+  .replayBody{grid-template-columns:1fr}
+  .replayScore{font-size:15px}.replayCount{font-size:10px}
+}
+
 </style>
 </head>
 <body>
 <button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.12.2</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -975,7 +1062,10 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       </details>
 
       <div id="finalScore" class="hidden"></div>
-      <button class="gray finalBack" onclick="returnFromResultToGame()">← 試合に戻って修正</button>
+      <div class="finalActions">
+        <button class="replayLaunch" onclick="startReplay()">▶ 試合リプレイ</button>
+        <button class="gray finalBack" onclick="returnFromResultToGame()">← 試合に戻って修正</button>
+      </div>
     </div>
 
     <!-- 既存JS互換用の非表示要素 -->
@@ -1019,6 +1109,81 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div class="tableScroll">
         <table class="allResultsTable" id="oppResultsTable"></table>
       </div>
+    </div>
+  </div>
+</section>
+
+
+<section id="s5" class="screen">
+  <div class="replayPage">
+    <div class="replayHeader">
+      <button class="gray replayBack" onclick="exitReplay()">← 結果へ戻る</button>
+      <div class="replayScore" id="replayScore">クロチーム 0 − 0 相手チーム</div>
+      <div class="replayCount" id="replayCount">1回表　0 OUT</div>
+    </div>
+
+    <div class="replayBody">
+      <div class="stadiumCard">
+        <div class="stadiumTitle">試合リプレイ</div>
+
+        <div class="stadiumView" id="stadiumView">
+          <div class="outfieldArc"></div>
+          <div class="infieldGrass"></div>
+          <div class="infieldDirt"></div>
+
+          <!-- foul lines -->
+          <div class="foulLine leftLine"></div>
+          <div class="foulLine rightLine"></div>
+
+          <!-- bases -->
+          <div class="replayBase rbHome">H</div>
+          <div class="replayBase rb1">1</div>
+          <div class="replayBase rb2">2</div>
+          <div class="replayBase rb3">3</div>
+
+          <!-- defenders: catcher-view high angle -->
+          <div class="fielder fP" data-pos="投">投</div>
+          <div class="fielder fC" data-pos="捕">捕</div>
+          <div class="fielder f1B" data-pos="一">一</div>
+          <div class="fielder f2B" data-pos="二">二</div>
+          <div class="fielder f3B" data-pos="三">三</div>
+          <div class="fielder fSS" data-pos="遊">遊</div>
+          <div class="fielder fLF" data-pos="左">左</div>
+          <div class="fielder fCF" data-pos="中">中</div>
+          <div class="fielder fRF" data-pos="右">右</div>
+
+          <!-- offense -->
+          <div class="replayRunner rr1" id="rr1"></div>
+          <div class="replayRunner rr2" id="rr2"></div>
+          <div class="replayRunner rr3" id="rr3"></div>
+          <div class="replayBatter" id="replayBatter">打</div>
+          <div class="replayBall" id="replayBall">●</div>
+
+          <div class="cameraLabel">捕手後方・上段視点</div>
+        </div>
+      </div>
+
+      <aside class="replayInfoCard">
+        <div class="replayInning" id="replayInning">1回表</div>
+        <div class="replayPlayer" id="replayPlayer">プレイボール</div>
+        <div class="replayResult" id="replayResult">試合を最初から振り返ります</div>
+
+        <div class="replayMini">
+          <div><span>アウト</span><b id="replayOuts">0</b></div>
+          <div><span>プレー</span><b id="replayIndex">0 / 0</b></div>
+        </div>
+
+        <div class="replayLog" id="replayLog"></div>
+
+        <div class="replayControls">
+          <button class="gray" onclick="replayPrev()">◀ 前へ</button>
+          <button onclick="replayNext()">次へ ▶</button>
+        </div>
+        <div class="replayControls">
+          <button class="gray" onclick="replayFirst()">⏮ 最初から</button>
+          <button class="gray" id="replayAutoBtn" onclick="toggleReplayAuto()">▶ 自動再生</button>
+        </div>
+      </aside>
     </div>
   </div>
 </section>
@@ -1883,6 +2048,254 @@ function renderFinalDashboard(){
 
   const batting=document.getElementById('battingSummary');
   if(batting)batting.innerHTML=buildFinalBattingTable();
+}
+
+
+let replayFrames=[];
+let replayPos=-1;
+let replayAutoTimer=null;
+
+function emptyReplayState(){
+  return {
+    inning:1, half:'表', outs:0, my:0, opp:0,
+    bases:[null,null,null]
+  };
+}
+
+function replayCloneState(sta){
+  return {
+    inning:sta.inning,half:sta.half,outs:sta.outs,my:sta.my,opp:sta.opp,
+    bases:[...sta.bases]
+  };
+}
+
+function replayScoreRun(state,side,count=1){
+  if(side==='my')state.my+=count; else state.opp+=count;
+}
+
+function replayAdvanceDefault(state,bases){
+  for(let i=2;i>=0;i--){
+    const r=state.bases[i];
+    if(!r)continue;
+    state.bases[i]=null;
+    const dest=i+bases;
+    if(dest>=3)replayScoreRun(state,state.side,1);
+    else state.bases[dest]=r;
+  }
+}
+
+function replayApplyEvent(state,e){
+  const r=(e.result||'').trim();
+  const player=e.player||'';
+  state.inning=e.inning||state.inning;
+  state.half=e.half||state.half;
+  state.side=e.side||state.side||'my';
+
+  // New half inning => clear bases / outs.
+  const key=state.inning+state.half;
+  if(state.lastHalfKey && state.lastHalfKey!==key){
+    state.outs=0;
+    state.bases=[null,null,null];
+  }
+  state.lastHalfKey=key;
+
+  // Batter outcomes.
+  if(r.includes('本塁打')){
+    let runners=state.bases.filter(Boolean).length;
+    state.bases=[null,null,null];
+    replayScoreRun(state,e.side||'my',1+runners);
+  }else if(r.includes('三塁打')){
+    replayAdvanceDefault(state,3); state.bases[2]=player;
+  }else if(r.includes('二塁打')){
+    replayAdvanceDefault(state,2); state.bases[1]=player;
+  }else if(r.includes('単打') || r.includes('安打') || r.includes('バントヒット') || r.includes('スクイズヒット')){
+    replayAdvanceDefault(state,1); state.bases[0]=player;
+  }else if(r.includes('四球') || r.includes('死球') || r.includes('エラー出塁') || r.includes('野選') || r.includes('振り逃げ')){
+    // simple force advance
+    if(state.bases[0] && state.bases[1] && state.bases[2]){
+      replayScoreRun(state,e.side||'my',1);
+      state.bases[2]=state.bases[1];
+      state.bases[1]=state.bases[0];
+      state.bases[0]=player;
+    }else if(state.bases[0] && state.bases[1]){
+      state.bases[2]=state.bases[1];state.bases[1]=state.bases[0];state.bases[0]=player;
+    }else if(state.bases[0]){
+      state.bases[1]=state.bases[0];state.bases[0]=player;
+    }else state.bases[0]=player;
+  }
+
+  // Running-event outcomes.
+  if(r.includes('盗塁') && !r.includes('盗塁死')){
+    const idx=state.bases.indexOf(player);
+    if(idx>=0 && idx<2){state.bases[idx]=null;state.bases[idx+1]=player;}
+  }
+  if((r.includes('三塁') || r.includes('→三塁')) && player && state.bases.indexOf(player)>=0){
+    const idx=state.bases.indexOf(player);state.bases[idx]=null;state.bases[2]=player;
+  }
+  if(r.includes('得点') || r.includes('生還')){
+    const idx=state.bases.indexOf(player); if(idx>=0)state.bases[idx]=null;
+    replayScoreRun(state,e.side||'my',1);
+  }
+
+  // Outs.
+  if(r.includes('三振') || r.includes('アウト') || r.includes('犠打成功')){
+    state.outs++;
+    const idx=state.bases.indexOf(player);
+    if(r.includes('走塁') || r.includes('盗塁死') || r.includes('牽制') || r.includes('挟殺') || r.includes('本塁アウト')){
+      if(idx>=0)state.bases[idx]=null;
+    }
+  }
+
+  if(state.outs>=3){
+    state.outs=3; // frame shows the 3rd out; next frame/half resets
+  }
+}
+
+function buildReplayFrames(){
+  const state=emptyReplayState();
+  replayFrames=[];
+
+  playEvents.forEach((e,i)=>{
+    const before=replayCloneState(state);
+    before.side=state.side;
+    before.lastHalfKey=state.lastHalfKey;
+
+    replayApplyEvent(state,e);
+
+    const after=replayCloneState(state);
+    after.side=state.side;
+    after.lastHalfKey=state.lastHalfKey;
+
+    replayFrames.push({
+      index:i,
+      event:e,
+      before,after
+    });
+  });
+}
+
+function startReplay(){
+  buildReplayFrames();
+  replayPos=-1;
+  show('s5');
+  renderReplayOpening();
+}
+
+function exitReplay(){
+  stopReplayAuto();
+  const result=document.getElementById('resultPanel');
+  show('s3');
+  if(result)result.classList.remove('hidden');
+  renderFinalDashboard();
+}
+
+function renderReplayOpening(){
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+  document.getElementById('replayScore').textContent=my+' 0 − 0 '+op;
+  document.getElementById('replayCount').textContent='プレイボール';
+  document.getElementById('replayInning').textContent='試合開始';
+  document.getElementById('replayPlayer').textContent='プレイボール';
+  document.getElementById('replayResult').textContent='最初のプレーから振り返ります';
+  document.getElementById('replayOuts').textContent='0';
+  document.getElementById('replayIndex').textContent='0 / '+replayFrames.length;
+  document.getElementById('replayLog').innerHTML='';
+  renderReplayBases([null,null,null]);
+  setReplayBall('');
+}
+
+function replayFirst(){replayPos=-1;renderReplayOpening();}
+
+function replayPrev(){
+  stopReplayAuto();
+  if(replayPos<=0){replayFirst();return;}
+  replayPos--;
+  renderReplayFrame(replayPos);
+}
+
+function replayNext(){
+  if(!replayFrames.length)return;
+  if(replayPos>=replayFrames.length-1){stopReplayAuto();return;}
+  replayPos++;
+  renderReplayFrame(replayPos);
+}
+
+function toggleReplayAuto(){
+  if(replayAutoTimer){stopReplayAuto();return;}
+  const btn=document.getElementById('replayAutoBtn');
+  if(btn)btn.textContent='⏸ 停止';
+  replayAutoTimer=setInterval(()=>{
+    if(replayPos>=replayFrames.length-1){stopReplayAuto();return;}
+    replayNext();
+  },1600);
+}
+
+function stopReplayAuto(){
+  if(replayAutoTimer){clearInterval(replayAutoTimer);replayAutoTimer=null;}
+  const btn=document.getElementById('replayAutoBtn');
+  if(btn)btn.textContent='▶ 自動再生';
+}
+
+function renderReplayFrame(pos){
+  const f=replayFrames[pos]; if(!f)return;
+  const e=f.event, a=f.after;
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+
+  document.getElementById('replayScore').textContent=my+' '+a.my+' − '+a.opp+' '+op;
+  document.getElementById('replayCount').textContent=(e.inning||a.inning)+'回'+(e.half||a.half)+'　'+a.outs+' OUT';
+  document.getElementById('replayInning').textContent=(e.inning||a.inning)+'回'+(e.half||a.half);
+  document.getElementById('replayPlayer').textContent=e.player||'プレー';
+  document.getElementById('replayResult').textContent=e.result||'';
+  document.getElementById('replayOuts').textContent=a.outs;
+  document.getElementById('replayIndex').textContent=(pos+1)+' / '+replayFrames.length;
+
+  renderReplayBases(a.bases);
+  animateReplayBall(e.result||'');
+
+  const log=document.getElementById('replayLog');
+  const line=document.createElement('div');
+  line.textContent=(pos+1)+'. '+(e.inning||'')+'回'+(e.half||'')+' '+(e.player||'')+' '+(e.result||'');
+  log.appendChild(line);
+  log.scrollTop=log.scrollHeight;
+}
+
+function renderReplayBases(bases){
+  ['rr1','rr2','rr3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    const r=bases[i];
+    if(r){el.textContent=(r||'走').slice(0,3);el.style.display='flex';}
+    else{el.textContent='';el.style.display='none';}
+  });
+}
+
+function setReplayBall(pos){
+  const b=document.getElementById('replayBall');
+  b.style.transition='none';
+  b.style.left='51%';b.style.bottom='14%';b.style.opacity='0';
+  requestAnimationFrame(()=>{b.style.transition='all .65s ease';});
+}
+
+function animateReplayBall(result){
+  const b=document.getElementById('replayBall');
+  setReplayBall('');
+  let left='50%', bottom='48%';
+
+  if(result.includes('左')){left='26%';bottom=result.includes('越')?'73%':'55%';}
+  else if(result.includes('右')){left='74%';bottom=result.includes('越')?'73%':'55%';}
+  else if(result.includes('中')){left='50%';bottom=result.includes('越')?'82%':'63%';}
+  else if(result.includes('ゴロ')){left='52%';bottom='38%';}
+  else if(result.includes('フライ') || result.includes('飛')){left='45%';bottom='68%';}
+  else if(result.includes('本塁打')){left='50%';bottom='90%';}
+  else if(result.includes('牽制')){left='65%';bottom='27%';}
+  else if(result.includes('盗塁')){left='58%';bottom='38%';}
+  else if(result.includes('スクイズ') || result.includes('バント')){left='53%';bottom='23%';}
+
+  requestAnimationFrame(()=>{
+    b.style.opacity='1';
+    b.style.left=left;b.style.bottom=bottom;
+    setTimeout(()=>{b.style.opacity='0';},900);
+  });
 }
 
 function classifyBatResult(result){
