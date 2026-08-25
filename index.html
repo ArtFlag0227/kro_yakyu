@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.11.2</title>
+<title>クロ野球 Ver.11.3</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -413,10 +413,112 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
   }
 }
 
+
+/* ===== Ver.11.3: single score panel + all-player results page ===== */
+.dashScore{display:none!important}
+
+@media (orientation:landscape){
+  .gameDash{
+    grid-template-columns:31% 69%;
+    grid-template-areas:
+      "top top"
+      "gamescore batter"
+      "runner bat"
+      "runner strategy"
+      "more more"
+      "result result";
+    grid-template-rows:auto auto 1fr auto auto;
+  }
+}
+
+.allResultsPage{
+  min-height:100vh;
+  padding:10px;
+  background:linear-gradient(180deg,#151515,#0b0b0b);
+}
+.resultsTopbar{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+.backBtn{
+  width:auto!important;
+  margin:0!important;
+  padding:8px 12px!important;
+}
+.resultsTitle{
+  font-size:20px;
+  font-weight:900;
+}
+.resultsSub{
+  font-size:11px;
+  color:#aaa;
+  margin-top:2px;
+}
+.resultsCard{
+  background:#151515;
+  border:1px solid #3b3b3b;
+  border-radius:10px;
+  padding:8px;
+  margin-bottom:10px;
+}
+.resultsTeamTitle{
+  font-size:14px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+.tableScroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.allResultsTable{
+  width:100%;
+  min-width:760px;
+  border-collapse:collapse;
+  table-layout:fixed;
+  font-size:10px;
+}
+.allResultsTable th,
+.allResultsTable td{
+  border:1px solid #444;
+  padding:5px 4px;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.allResultsTable th{
+  background:#262626;
+  position:sticky;
+  top:0;
+  z-index:2;
+}
+.allResultsTable th:nth-child(1),
+.allResultsTable td:nth-child(1){width:38px}
+.allResultsTable th:nth-child(2),
+.allResultsTable td:nth-child(2){width:54px}
+.allResultsTable th:nth-child(3),
+.allResultsTable td:nth-child(3){width:96px;text-align:left}
+.allResultsTable th:nth-child(4),
+.allResultsTable td:nth-child(4){width:56px}
+.allResultsTable th:nth-child(5),
+.allResultsTable td:nth-child(5){width:64px}
+.allResultsTable .hitCell{background:#123f31}
+.allResultsTable .outCell{background:#3b2020}
+.allResultsTable .otherCell{background:#3a3218}
+.allResultsTable .summaryCell{font-weight:900;background:#202020}
+
+@media (orientation:portrait){
+  .allResultsPage{padding:7px}
+  .resultsTitle{font-size:17px}
+}
+
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.2</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.3</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -519,15 +621,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
     </div>
 
     <!-- 左：途中スコア -->
-    <aside class="dashScore panel">
-      <div class="panelHead">
-        <b>途中スコア</b>
-        <button class="tinyBtn" onclick="toggleLiveScore()">開閉</button>
-      </div>
-      <div class="liveScorePanel" id="liveScorePanel">
-        <div id="liveScoreTable"></div>
-      </div>
-    </aside>
+    
 
     <!-- 左：ランナー -->
     
@@ -637,6 +731,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
         <button class="yellow" onclick="openPinchHitter()">代打</button>
         <button class="blue" onclick="openEnemyPitcherChange()">敵 投手交代</button>
         <button class="gray" onclick="undo()">ひとつ戻す</button>
+        <button class="gray" onclick="showAllPlayerResults()">全選手成績</button>
         <button class="gray" onclick="finishGame()">試合終了</button>
       </div>
 
@@ -722,6 +817,33 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <button onclick="run()">得点 ＋1</button>
     </div>
 
+  </div>
+</section>
+
+
+<section id="s4" class="screen">
+  <div class="allResultsPage">
+    <div class="resultsTopbar">
+      <button class="gray backBtn" onclick="backToGame()">← 試合へ戻る</button>
+      <div>
+        <div class="resultsTitle">全選手 打席結果</div>
+        <div class="resultsSub" id="resultsGameStatus"></div>
+      </div>
+    </div>
+
+    <div class="resultsCard">
+      <div class="resultsTeamTitle" id="myResultsTitle">自チーム</div>
+      <div class="tableScroll">
+        <table class="allResultsTable" id="myResultsTable"></table>
+      </div>
+    </div>
+
+    <div class="resultsCard">
+      <div class="resultsTeamTitle" id="oppResultsTitle">相手チーム</div>
+      <div class="tableScroll">
+        <table class="allResultsTable" id="oppResultsTable"></table>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1262,6 +1384,110 @@ function toggleLiveScore(){
   panel.style.display = panel.style.display==='none' ? 'block' : 'none';
   renderLiveScore();
   renderGameScoreBoard();
+}
+
+
+function classifyBatResult(result){
+  if(!result)return '';
+  if(result.includes('本塁打') || result.includes('三塁打') || result.includes('二塁打') ||
+     result.includes('単打') || result.includes('バントヒット')){
+    return 'hitCell';
+  }
+  if(result.includes('三振') || result.includes('飛') || result.includes('ゴロ') ||
+     result.includes('ライナー') || result.includes('アウト')){
+    return 'outCell';
+  }
+  return 'otherCell';
+}
+
+function playerEvents(side, name){
+  return playEvents
+    .filter(e=>e.side===side && e.player===name && e.result)
+    .map(e=>e.result);
+}
+
+function makeResultsTable(side){
+  const isMy=side==='my';
+  const names=isMy ? players : oppPlayers;
+  const numbers=isMy ? nums : oppNums;
+  const poss=isMy ? positions : oppPositions;
+  const th=isMy ? throws : oppThrows;
+  const bt=isMy ? bats : oppBats;
+
+  let maxPA=1;
+  const rows=[];
+
+  for(let i=0;i<9;i++){
+    const name=(names[i]||'').trim() || (isMy ? ('選手'+(i+1)) : ('相手 '+(i+1)+'番'));
+    const ev=playerEvents(side,name);
+    maxPA=Math.max(maxPA,ev.length);
+
+    const hits=ev.filter(r =>
+      r.includes('単打') || r.includes('二塁打') || r.includes('三塁打') ||
+      r.includes('本塁打') || r.includes('バントヒット')
+    ).length;
+    const hr=ev.filter(r=>r.includes('本塁打')).length;
+
+    rows.push({
+      order:i+1,
+      no:numbers[i]||'',
+      name,
+      pos:poss[i]||'',
+      hand:(th[i]||'右')+'投'+(bt[i]||'右')+'打',
+      ev,
+      hits,
+      hr
+    });
+  }
+
+  maxPA=Math.max(4,maxPA);
+
+  let html='<tr><th>打順</th><th>背番号</th><th>選手</th><th>守備</th><th>投打</th>';
+  for(let i=1;i<=maxPA;i++)html+='<th>'+i+'打席</th>';
+  html+='<th>成績</th></tr>';
+
+  rows.forEach(r=>{
+    html+='<tr>';
+    html+='<td>'+r.order+'</td>';
+    html+='<td>'+(r.no ? '#'+r.no : '')+'</td>';
+    html+='<td>'+r.name+'</td>';
+    html+='<td>'+r.pos+'</td>';
+    html+='<td>'+r.hand+'</td>';
+
+    for(let i=0;i<maxPA;i++){
+      const result=r.ev[i]||'';
+      html+='<td class="'+classifyBatResult(result)+'">'+result+'</td>';
+    }
+
+    html+='<td class="summaryCell">'+r.ev.length+'打席 '+r.hits+'安打'+(r.hr?' '+r.hr+'本':'')+'</td>';
+    html+='</tr>';
+  });
+
+  return html;
+}
+
+function renderAllPlayerResults(){
+  const my=document.getElementById('myteam').value||'クロチーム';
+  const op=document.getElementById('opp').value||'相手チーム';
+
+  document.getElementById('myResultsTitle').textContent=my+'　全選手結果';
+  document.getElementById('oppResultsTitle').textContent=op+'　全選手結果';
+
+  document.getElementById('myResultsTable').innerHTML=makeResultsTable('my');
+  document.getElementById('oppResultsTable').innerHTML=makeResultsTable('opp');
+
+  const status=document.getElementById('resultsGameStatus');
+  status.textContent=st.inning+'回'+(st.top?'表':'裏')+'　'+my+' '+st.my+' − '+st.opp+' '+op+'　'+st.o+' OUT';
+}
+
+function showAllPlayerResults(){
+  renderAllPlayerResults();
+  show('s4');
+}
+
+function backToGame(){
+  show('s3');
+  render();
 }
 
 function renderGameScoreBoard(){
