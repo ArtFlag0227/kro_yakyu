@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.9.6</title>
+<title>クロ野球 Ver.10</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -174,10 +174,64 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 #runnerActionPanel.hidden{display:none!important}
 #runnerActionPanel.show:not(.hidden){display:block!important}
 
+
+/* ===== Ver.10 compact UI ===== */
+.lineupHead,.lineupRow{
+  grid-template-columns:38px 54px minmax(90px,1fr) 68px 48px 48px;
+  gap:4px;
+}
+.opponentRow,.opponentHead.opp6{
+  grid-template-columns:38px 54px minmax(90px,1fr) 68px 48px 48px;
+  gap:4px;
+}
+.lineupRow select,.opponentRow select{min-width:0}
+
+@media (orientation:landscape) {
+  body{font-size:13px}
+  header{padding:7px 10px;font-size:16px}
+  main{max-width:none;padding:4px 8px}
+  #s3 .card{padding:6px;border-radius:10px}
+  #s3 h2{display:none}
+  #s3 #inning,
+  #s3 .scoreboard,
+  #s3 .legend{display:none}
+
+  .stickyScore{top:38px;padding:5px 7px;margin:0 0 4px;font-size:11px;border-radius:8px}
+  .stickyScore .scoreMid{font-size:14px}
+  .attack{top:71px;padding:7px;margin:4px 0;font-size:14px;border-width:2px}
+  .player{margin:4px 0;padding:7px 9px;font-size:12px}
+  .sectionTitle{margin:5px 0 3px;font-size:12px}
+  button{padding:7px 5px;margin-top:4px;min-height:34px;font-size:12px;border-radius:7px}
+  input,select{padding:6px;font-size:12px}
+
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .hitLocationBox{grid-template-columns:1fr 1fr;gap:5px;margin-bottom:4px}
+  .runnerPanel,.changePanel,.subCard{padding:6px;margin:5px 0;border-radius:8px}
+  .status{padding:5px;margin:5px 0}
+  .status b{font-size:17px}
+
+  .bases{width:145px;height:88px;margin:4px auto 6px}
+  .base{width:39px;height:39px}
+  .base span{font-size:8px;line-height:9px;padding-top:6px}
+  .b1{right:12px;bottom:5px}.b2{left:52px;top:2px}.b3{left:12px;bottom:5px}
+  .baseTap{width:62px!important;min-width:62px!important;height:32px!important;font-size:9px!important}
+  .bt1{right:-2px!important;bottom:2px!important}.bt2{left:42px!important;top:-5px!important}.bt3{left:-4px!important;bottom:2px!important}
+
+  .feedbackRow{margin:4px 0;font-size:10px}
+  .small{font-size:10px}
+
+  #s1 .card,#s2 .card{padding:8px}
+  #s1 h2,#s2 h2{margin:3px 0 7px;font-size:18px}
+  .teamSetup{padding:7px 9px;margin:7px 0}
+  .field{margin:7px 0}
+  .lineupRow{margin:4px 0}
+  .lineupRow input,.lineupRow select{padding:6px 4px;font-size:11px}
+}
+
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.9.6</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.10</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -244,14 +298,14 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 <section id="s2" class="screen">
   <div class="card">
     <h2>② スタメン</h2>
-    <p class="small">背番号・選手名・守備位置を入力できます</p>
-    <div class="lineupHead"><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span></div>
+    <p class="small">背番号・選手名・守備・投打（右/左）を入力できます</p>
+    <div class="lineupHead"><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span><span>投</span><span>打</span></div>
     <div id="lineup"></div>
 
     <div class="sectionTitle">相手スタメン</div>
     <div class="subCard">
       <p class="small">試合前は背番号だけでもOK。名前は後から入力できます。</p>
-      <div class="opponentHead"><span>打順</span><span>背番号</span><span>選手名（任意）</span><span>守備</span></div>
+      <div class="opponentHead opp6"><span>打順</span><span>背番号</span><span>選手名（任意）</span><span>守備</span><span>投</span><span>打</span></div>
       <div id="oppLineup"></div>
     </div>
 
@@ -486,9 +540,13 @@ function kroShowScreen(targetId){
 let players=['山田','佐藤','鈴木','','','','','',''];
 let nums=['1','2','3','','','','','',''];
 let positions=['遊','中','右','','','','','',''];
+let throws=['右','右','右','右','右','右','右','右','右'];
+let bats=['右','右','右','右','右','右','右','右','右'];
 let oppPlayers=['','','','','','','','',''];
 let oppNums=['','','','','','','','',''];
 let oppPositions=['','','','','','','','',''];
+let oppThrows=['右','右','右','右','右','右','右','右','右'];
+let oppBats=['右','右','右','右','右','右','右','右','右'];
 let benchPlayers=[];
 let benchNums=[];
 let playEvents=[];
@@ -508,7 +566,9 @@ players.forEach((p,i)=>{
     '<div class="order">'+(i+1)+'番</div>'+
     '<input id="n'+i+'" value="'+nums[i]+'" placeholder="#">'+
     '<input id="p'+i+'" value="'+p+'" placeholder="選手名">'+
-    '<select id="pos'+i+'">'+options+'</select>';
+    '<select id="pos'+i+'">'+options+'</select>'+
+    '<select id="throw'+i+'"><option '+(throws[i]==='右'?'selected':'')+'>右</option><option '+(throws[i]==='左'?'selected':'')+'>左</option></select>'+
+    '<select id="bat'+i+'"><option '+(bats[i]==='右'?'selected':'')+'>右</option><option '+(bats[i]==='左'?'selected':'')+'>左</option></select>';
   lineup.appendChild(r);
 });
 const oppLineup=document.getElementById('oppLineup');
@@ -519,7 +579,9 @@ oppPlayers.forEach((p,i)=>{
   r.innerHTML='<div class="order">'+(i+1)+'番</div>'+
     '<input id="on'+i+'" value="'+oppNums[i]+'" placeholder="#">'+
     '<input id="op'+i+'" value="'+p+'" placeholder="名前は後からでもOK">'+
-    '<select id="opos'+i+'">'+oppOptions+'</select>';
+    '<select id="opos'+i+'">'+oppOptions+'</select>'+
+    '<select id="othrow'+i+'"><option '+(oppThrows[i]==='右'?'selected':'')+'>右</option><option '+(oppThrows[i]==='左'?'selected':'')+'>左</option></select>'+
+    '<select id="obat'+i+'"><option '+(oppBats[i]==='右'?'selected':'')+'>右</option><option '+(oppBats[i]==='左'?'selected':'')+'>左</option></select>';
   oppLineup.appendChild(r);
 });
 
@@ -619,9 +681,13 @@ function go3(){
   players=players.map((_,i)=>document.getElementById('p'+i).value.trim()||('選手'+(i+1)));
   nums=nums.map((_,i)=>document.getElementById('n'+i).value.trim());
   positions=positions.map((_,i)=>document.getElementById('pos'+i).value);
+  throws=throws.map((_,i)=>document.getElementById('throw'+i).value);
+  bats=bats.map((_,i)=>document.getElementById('bat'+i).value);
   oppPlayers=oppPlayers.map((_,i)=>document.getElementById('op'+i).value.trim());
   oppNums=oppNums.map((_,i)=>document.getElementById('on'+i).value.trim());
   oppPositions=oppPositions.map((_,i)=>document.getElementById('opos'+i).value);
+  oppThrows=oppThrows.map((_,i)=>document.getElementById('othrow'+i).value);
+  oppBats=oppBats.map((_,i)=>document.getElementById('obat'+i).value);
   collectBench();
   playEvents=[]; changeEvents=[]; inningRuns={my:{},opp:{}};
 
@@ -1197,12 +1263,14 @@ function render(){
   const no=nums[st.batter]?'背番号 '+nums[st.batter]+'　':'';
   const ps=positions[st.batter]?'　守備 '+positions[st.batter]:'';
   if(st.top){
-    document.getElementById('batter').textContent=(st.batter+1)+'番　'+no+players[st.batter]+ps;
+    const hand='　'+throws[st.batter]+'投'+bats[st.batter]+'打';
+    document.getElementById('batter').textContent=(st.batter+1)+'番　'+no+players[st.batter]+ps+hand;
   }else{
     const on=oppNums[st.oppBatter]?'背番号 '+oppNums[st.oppBatter]+'　':'';
     const opn=oppPlayers[st.oppBatter]||'相手打者';
     const opos=oppPositions[st.oppBatter]?'　守備 '+oppPositions[st.oppBatter]:'';
-    document.getElementById('batter').textContent=(st.oppBatter+1)+'番　'+on+opn+opos;
+    const ohand='　'+oppThrows[st.oppBatter]+'投'+oppBats[st.oppBatter]+'打';
+    document.getElementById('batter').textContent=(st.oppBatter+1)+'番　'+on+opn+opos+ohand;
   }
 
   for(let i=0;i<3;i++){
