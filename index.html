@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.13.3</title>
+<title>クロ野球 Ver.13.4</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -1052,7 +1052,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 }
 
 
-/* ===== Ver.13.3 STADIUM FIRST REPLAY ===== */
+/* ===== Ver.13.4 STADIUM FIRST REPLAY ===== */
 @media (orientation:landscape){
   #s5 .replayPage{padding:2px!important}
   #s5 .replayHeader{
@@ -1130,11 +1130,17 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 }
 #s5 .replaySuspense.show{opacity:1}
 
+/* Ver.13.4 DOUBLE PLAY */
+.actionGrid.twoDoublePlay{grid-template-columns:1fr 1fr;margin-top:5px}
+.actionGrid.twoDoublePlay button{margin:0!important;min-height:32px!important;font-size:10px!important}
+.dpChoice{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dpChoice button{margin:0!important}
+@media (orientation:portrait){.dpChoice{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.3</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.4</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1336,7 +1342,10 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
           <option value="邪飛">ファウルフライ</option>
         </select>
       </div>
-      <button class="red tinyWide" onclick="recordFieldOut()">アウトを記録</button>
+      <div class="actionGrid twoDoublePlay">
+<button class="red" onclick="recordFieldOut()">アウトを記録</button>
+<button class="purple" onclick="openDoublePlay()">併殺／ダブルプレー</button>
+</div>
     </section>
 
     <!-- 右下：作戦と交代 -->
@@ -2537,7 +2546,9 @@ function replayApplyEvent(state,e){
   }
 
   // Outs.
-  if(r.includes('三振') || r.includes('アウト') || r.includes('犠打成功')){
+  if(r.includes('併殺') && !r.includes('併殺崩れ')){
+    state.outs+=2;
+  }else if(r.includes('三振') || r.includes('アウト') || r.includes('犠打成功') || r.includes('併殺崩れ')){
     state.outs++;
     const idx=state.bases.indexOf(player);
     if(r.includes('走塁') || r.includes('盗塁死') || r.includes('牽制') || r.includes('挟殺') || r.includes('本塁アウト')){
@@ -2715,6 +2726,7 @@ function resultMood(result){
 }
 
 function resultCall(result){
+  if(result.includes('併殺') && !result.includes('併殺崩れ'))return 'ダブルプレー！！';
   if(result.includes('本塁打'))return 'ホームラン！！';
   if(result.includes('三塁打'))return '三塁打！';
   if(result.includes('二塁打'))return '二塁打！';
@@ -3162,6 +3174,59 @@ function strikeout(kind){
   doOut();
   render();
 }
+
+function openDoublePlay(){
+  if(!st.bases.some(Boolean)){alert('ランナーがいません。併殺には塁上のランナーが必要です。');return;}
+  if(st.o>=2){alert('すでに2アウトなので通常の併殺は成立しません。');return;}
+  const box=document.getElementById('irregularPanel'),body=document.getElementById('irregularBody');
+  document.getElementById('irregularTitle').textContent='併殺／ダブルプレー';
+  let buttons='';
+  st.bases.forEach((r,i)=>{if(r)buttons+='<button class="red" onclick="doublePlayBatterRunner('+i+')">打者＋'+(i+1)+'塁走者アウト</button>';});
+  body.innerHTML='<div class="small" style="margin-bottom:7px">通常併殺・変則併殺・併殺崩れを選べます。</div><div class="dpChoice">'+buttons+
+    '<button class="yellow" onclick="openDoublePlayTwoRunners()">走者2人がアウト</button>'+
+    '<button class="gray" onclick="doublePlayBroken()">併殺崩れ（1アウト）</button></div>';
+  box.classList.remove('hidden');
+}
+function doublePlayLabel(){
+  const p=document.getElementById('outPos')?.value||'遊',t=document.getElementById('outType')?.value||'ゴロ';
+  return p+t+'併殺';
+}
+function doublePlayBatterRunner(i){
+  const runner=st.bases[i];if(!runner)return;save();
+  const batter=currentBatterName(),result=doublePlayLabel();
+  st.bases[i]=null;log(batter+' '+result+'（'+runner+'＋打者アウト）');recordPlay(result,batter);
+  st.o+=2;st.b=0;st.s=0;
+  if(st.top)st.batter=(st.batter+1)%players.length;else st.oppBatter=(st.oppBatter+1)%9;
+  closeIrregular();if(st.o>=3)changeSides();else render();
+}
+function openDoublePlayTwoRunners(){
+  const occ=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null);
+  if(occ.length<2){alert('走者が2人以上いる時に使えます');return;}
+  let h='<div class="small">アウトになった走者を2人選択</div><div class="dpChoice">';
+  for(let a=0;a<occ.length;a++)for(let b=a+1;b<occ.length;b++){let i=occ[a],j=occ[b];h+='<button class="red" onclick="doublePlayTwoRunners('+i+','+j+')">'+(i+1)+'塁 '+st.bases[i]+' ＋ '+(j+1)+'塁 '+st.bases[j]+'</button>';}
+  document.getElementById('irregularBody').innerHTML=h+'<button class="gray" onclick="openDoublePlay()">← 戻る</button></div>';
+}
+function doublePlayTwoRunners(i,j){
+  if(!st.bases[i]||!st.bases[j])return;save();
+  const r1=st.bases[i],r2=st.bases[j];st.bases[i]=null;st.bases[j]=null;st.o+=2;
+  log(r1+'・'+r2+' 走者2人併殺');
+  playEvents.push({inning:st.inning,half:st.top?'表':'裏',side:st.top?'my':'opp',player:r1+'・'+r2,result:'走者2人併殺'});
+  closeIrregular();if(st.o>=3)changeSides();else render();
+}
+function doublePlayBroken(){
+  const occ=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null),body=document.getElementById('irregularBody');
+  let h='<div class="small">アウトになった走者を選択。打者は一塁セーフ。</div><div class="dpChoice">';
+  occ.forEach(i=>h+='<button class="yellow" onclick="doublePlayBrokenRunner('+i+')">'+(i+1)+'塁 '+st.bases[i]+' がアウト</button>');
+  body.innerHTML=h+'<button class="gray" onclick="openDoublePlay()">← 戻る</button></div>';
+}
+function doublePlayBrokenRunner(i){
+  const runner=st.bases[i];if(!runner)return;save();
+  const batter=currentBatterName();st.bases[i]=null;st.bases[0]=batter;st.o++;
+  log(batter+' 併殺崩れ（'+runner+'アウト・打者一塁セーフ）');recordPlay('併殺崩れ',batter);
+  st.b=0;st.s=0;if(st.top)st.batter=(st.batter+1)%players.length;else st.oppBatter=(st.oppBatter+1)%9;
+  closeIrregular();if(st.o>=3)changeSides();else render();
+}
+
 function recordFieldOut(){
   save();
   const n=currentBatterName();
