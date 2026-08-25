@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.11.3</title>
+<title>クロ野球 Ver.11.4</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -518,7 +518,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.3</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.4</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1498,25 +1498,64 @@ function renderGameScoreBoard(){
   const op=document.getElementById('opp').value||'相手チーム';
   const maxInn=Math.max(7,st.inning);
 
+  // 得点イベントから各回の得点を毎回作り直す。
+  // これで回が進んでも古い inningRuns に依存しない。
+  const scoreByInn={my:{},opp:{}};
+
+  playEvents.forEach(e=>{
+    if(!e || !e.inning || !e.side || !e.result)return;
+
+    let runs=0;
+
+    // 通常の生還イベント
+    if(e.result==='得点' || e.result.includes('生還')){
+      runs=1;
+    }
+
+    // 本塁打など、イベント側に runs が保存されている場合
+    if(typeof e.runs==='number' && e.runs>0){
+      runs=e.runs;
+    }
+
+    if(runs>0){
+      const inn=String(e.inning);
+      scoreByInn[e.side][inn]=(scoreByInn[e.side][inn]||0)+runs;
+    }
+  });
+
+  // 既存 inningRuns にしか残っていない得点も補完する
+  for(let i=1;i<=maxInn;i++){
+    const k=String(i);
+    const myOld=(inningRuns.my && (inningRuns.my[k] ?? inningRuns.my[i])) || 0;
+    const opOld=(inningRuns.opp && (inningRuns.opp[k] ?? inningRuns.opp[i])) || 0;
+    scoreByInn.my[k]=Math.max(scoreByInn.my[k]||0, myOld);
+    scoreByInn.opp[k]=Math.max(scoreByInn.opp[k]||0, opOld);
+  }
+
   let html='<table class="gameScoreTable"><tr><th>TEAM</th>';
   for(let i=1;i<=maxInn;i++)html+='<th>'+i+'</th>';
   html+='<th class="total">計</th></tr>';
 
   html+='<tr><td>'+my+'</td>';
   for(let i=1;i<=maxInn;i++){
-    const v=(inningRuns.my && (inningRuns.my[String(i)] ?? inningRuns.my[i])) ?? '';
-    html+='<td>'+v+'</td>';
+    const k=String(i);
+    // 終了した回は0点でも「0」を表示。まだ来ていない回は空欄。
+    const played = i < st.inning || (i===st.inning && !st.top);
+    const v = scoreByInn.my[k] || 0;
+    html+='<td>'+(played || v>0 ? v : '')+'</td>';
   }
   html+='<td class="total">'+st.my+'</td></tr>';
 
   html+='<tr><td>'+op+'</td>';
   for(let i=1;i<=maxInn;i++){
-    const v=(inningRuns.opp && (inningRuns.opp[String(i)] ?? inningRuns.opp[i])) ?? '';
-    html+='<td>'+v+'</td>';
+    const k=String(i);
+    const played = i < st.inning;
+    const v = scoreByInn.opp[k] || 0;
+    html+='<td>'+(played || v>0 ? v : '')+'</td>';
   }
   html+='<td class="total">'+st.opp+'</td></tr></table>';
 
-  html+='<div class="gameScoreNow"><span>'+(st.inning)+'回'+(st.top?'表':'裏')+'</span>'+
+  html+='<div class="gameScoreNow"><span>'+st.inning+'回'+(st.top?'表':'裏')+'</span>'+
         '<span><b>'+st.my+' − '+st.opp+'</b>　'+st.o+' OUT</span></div>';
 
   wrap.innerHTML=html;
@@ -1886,8 +1925,8 @@ function render(){
     }
   });
 
-    renderCurrentBatterSummary();
-  renderGameScoreBoard();
+    renderGameScoreBoard();
+  renderCurrentBatterSummary();
 
   const rc=document.getElementById('runnerControls');
   rc.innerHTML='';
