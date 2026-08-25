@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.11</title>
+<title>クロ野球 Ver.11.1</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -373,7 +373,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11.1</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1418,13 +1418,57 @@ function doOut(){
   if(st.o>=3)changeSides();
 }
 function changeSides(){
-  st.o=0; st.b=0; st.s=0; st.bases=[null,null,null]; st.lastScored=[];
-  if(st.top)st.top=false;
-  else{st.top=true;st.inning++;}
+  // 攻守交代時は、必ずアウト・塁上を完全リセット
+  st.o=0;
+  st.b=0;
+  st.s=0;
+  st.bases=[null,null,null];
+  st.lastScored=[];
+
+  if(st.top){
+    st.top=false;
+  }else{
+    st.top=true;
+    st.inning++;
+  }
+
   log('3アウト！ チェンジ');
-  const q=document.getElementById('quickChangePanel'); if(q)q.classList.add('hidden');
-  const c=document.getElementById('changePanel'); if(c)c.classList.add('hidden');
+
+  const q=document.getElementById('quickChangePanel');
+  if(q)q.classList.add('hidden');
+  const c=document.getElementById('changePanel');
+  if(c)c.classList.add('hidden');
+
+  const rp=document.getElementById('runnerActionPanel');
+  if(rp){
+    rp.classList.add('hidden');
+    rp.classList.remove('show');
+  }
+
+  // 画面側も即時リセット
+  const miniOut=document.getElementById('miniOut');
+  if(miniOut)miniOut.textContent='0 OUT';
+  const outsMini=document.getElementById('outsMini');
+  if(outsMini)outsMini.textContent='0 OUT';
+  const outs=document.getElementById('outs');
+  if(outs)outs.textContent='0';
+
+  ['base1','base2','base3'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.classList.remove('on');
+  });
+  ['baseTap1','baseTap2','baseTap3'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b){
+      b.textContent='';
+      b.classList.remove('show');
+    }
+  });
+  const rc=document.getElementById('runnerControls');
+  if(rc)rc.innerHTML='<div class="small">ランナーなし</div>';
+
   applyGameTheme();
+  render();
   showSideChange();
 }
 function showSideChange(){
