@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.13.2</title>
+<title>クロ野球 Ver.13.3</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -1051,11 +1051,90 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
   .stadiumView{max-height:78vh}
 }
 
+
+/* ===== Ver.13.3 STADIUM FIRST REPLAY ===== */
+@media (orientation:landscape){
+  #s5 .replayPage{padding:2px!important}
+  #s5 .replayHeader{
+    position:absolute!important;left:10px!important;right:10px!important;top:6px!important;
+    z-index:120!important;background:#050505d9!important;
+    padding:5px 8px 5px 96px!important;margin:0!important;
+    border:2px solid #fff!important;border-radius:0!important;
+  }
+  #s5 .replayBody{display:block!important}
+  #s5 .stadiumCard{padding:0!important;border:0!important;background:#000!important}
+  #s5 .stadiumView{
+    width:100%!important;height:calc(100vh - 8px)!important;max-height:none!important;
+    aspect-ratio:auto!important;border-width:5px!important;
+  }
+  #s5 .replayInfoCard{
+    position:absolute!important;right:14px!important;bottom:12px!important;z-index:115!important;
+    width:245px!important;min-width:0!important;
+    padding:7px!important;background:#050505e8!important;
+    border:2px solid #fff!important;
+  }
+  #s5 .replayInfoCard .replayInning,
+  #s5 .replayInfoCard .replayMini,
+  #s5 .replayInfoCard .replayHistory{display:none!important}
+  #s5 .replayPlayer{font-size:16px!important;margin:0!important}
+  #s5 .replayResult{font-size:13px!important;min-height:20px!important;margin:3px 0!important}
+  #s5 .replayLastPlay{font-size:10px!important;padding:4px!important;margin:2px 0 5px!important}
+  #s5 .replayControls{gap:4px!important;margin-top:4px!important}
+  #s5 .replayControls button{min-height:28px!important;padding:4px!important;font-size:9px!important}
+  #s5 .retroScoreOverlay{top:11%!important}
+  #s5 .retroBatterOverlay{right:14px!important;bottom:158px!important}
+}
+
+/* Smaller players, larger readable field */
+#s5 .fielder,#s5 .replayBatter,#s5 .replayRunner{
+  width:21px!important;height:27px!important;
+  box-shadow:-4px 18px 0 -2px #111,4px 18px 0 -2px #111!important;
+}
+#s5 .fielder::before,#s5 .replayBatter::before,#s5 .replayRunner::before{
+  left:4px!important;top:-4px!important;width:14px!important;height:6px!important;
+}
+#s5 .fielder::after,#s5 .replayBatter::after,#s5 .replayRunner::after{
+  left:-4px!important;top:12px!important;width:29px!important;height:6px!important;
+}
+
+/* Dim static fielders; highlight only the player involved */
+#s5 .fielder{filter:brightness(.72);opacity:.9}
+#s5 .fielder.activeFielder{
+  filter:brightness(1.55)!important;opacity:1!important;
+  transform:scale(1.28)!important;
+}
+
+/* Big event captions */
+#s5 .replayCallout{
+  min-width:260px!important;
+  font-size:32px!important;
+  padding:12px 22px!important;
+  text-shadow:3px 3px 0 #000;
+}
+#s5 .replayCallout.hr{
+  font-size:42px!important;
+  border-width:5px!important;
+  animation:hrPulse .42s ease 2;
+}
+@keyframes hrPulse{
+  0%{transform:translate(-50%,-50%) scale(.9)}
+  55%{transform:translate(-50%,-50%) scale(1.15)}
+  100%{transform:translate(-50%,-50%) scale(1)}
+}
+
+/* Dramatic pause indicator */
+#s5 .replaySuspense{
+  position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);
+  z-index:79;color:#fff;font:1000 20px monospace;text-shadow:2px 2px #000;
+  opacity:0;transition:opacity .15s;
+}
+#s5 .replaySuspense.show{opacity:1}
+
 </style>
 </head>
 <body>
 <button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.2</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.3</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1471,6 +1550,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 
           <div class="retroScoreOverlay" id="retroScoreOverlay">1回表<br>0 - 0</div>
           <div class="retroBatterOverlay" id="retroBatterOverlay">打者<br>---</div>
+          <div class="replaySuspense" id="replaySuspense"></div>
           <div class="replayCallout" id="replayCallout"></div>
           <div class="replayPhase" id="replayPhase"></div>
           <div class="cameraLabel">捕手後方・上段視点</div>
@@ -2548,16 +2628,18 @@ function toggleReplayAuto(){
   const btn=document.getElementById('replayAutoBtn');
   if(btn)btn.textContent='⏸ 停止';
 
-  // Play the next frame immediately, then continue at a cinematic pace.
-  if(replayPos<replayFrames.length-1)replayNext();
-  replayAutoTimer=setInterval(()=>{
+  const step=()=>{
     if(replayPos>=replayFrames.length-1){stopReplayAuto();return;}
     replayNext();
-  },2450);
+    const current=replayFrames[replayPos];
+    const wait=replayTiming(current?.event?.result||'').next;
+    replayAutoTimer=setTimeout(step,wait);
+  };
+  step();
 }
 
 function stopReplayAuto(){
-  if(replayAutoTimer){clearInterval(replayAutoTimer);replayAutoTimer=null;}
+  if(replayAutoTimer){clearTimeout(replayAutoTimer);replayAutoTimer=null;}
   const btn=document.getElementById('replayAutoBtn');
   if(btn)btn.textContent='▶ 自動再生';
 }
@@ -2590,7 +2672,7 @@ function replayPhaseText(text){
 function replayCall(text,type=''){
   const c=document.getElementById('replayCallout');
   if(!c)return;
-  c.className='replayCallout '+type;
+  c.className='replayCallout '+type+(text.includes('ホームラン')?' hr':'');
   c.textContent=text;
   requestAnimationFrame(()=>c.classList.add('show'));
 }
@@ -2598,6 +2680,31 @@ function replayCall(text,type=''){
 function replayCallHide(){
   const c=document.getElementById('replayCallout');
   if(c)c.classList.remove('show');
+}
+
+
+function replayKind(result){
+  if(/本塁打/.test(result)) return 'homer';
+  if(/盗塁|牽制/.test(result)) return 'steal';
+  if(/三振/.test(result)) return 'strikeout';
+  if(/単打|二塁打|三塁打|安打|ヒット/.test(result)) return 'hit';
+  return 'normal';
+}
+function replayTiming(result){
+  const k=replayKind(result);
+  if(k==='strikeout') return {action:430,result:900,end:1600,next:1900};
+  if(k==='hit')       return {action:380,result:1250,end:2200,next:2600};
+  if(k==='steal')     return {action:300,result:1500,end:2450,next:2900};
+  if(k==='homer')     return {action:420,result:1800,end:3300,next:3900};
+  return {action:400,result:1100,end:1950,next:2350};
+}
+function showSuspense(text){
+  const el=document.getElementById('replaySuspense');
+  if(!el)return;
+  el.textContent=text;el.classList.add('show');
+}
+function hideSuspense(){
+  document.getElementById('replaySuspense')?.classList.remove('show');
 }
 
 function resultMood(result){
@@ -2694,51 +2801,67 @@ function appendReplayHistory(pos,e){
 
 function playReplaySequence(pos){
   clearReplayStages();
+  hideSuspense();
   const f=replayFrames[pos]; if(!f)return;
-  const e=f.event, b=f.before, a=f.after;
+  const e=f.event,b=f.before,a=f.after;
+  const result=e.result||'';
+  const timing=replayTiming(result);
+  const kind=replayKind(result);
   const my=document.getElementById('myteam').value||'クロチーム';
   const op=document.getElementById('opp').value||'相手チーム';
 
-  // Begin from the state BEFORE the play.
   renderReplayBases(b.bases);
   document.getElementById('replayScore').textContent=my+' '+b.my+' − '+b.opp+' '+op;
   document.getElementById('replayCount').textContent=(e.inning||b.inning)+'回'+(e.half||b.half)+'　'+b.outs+' OUT';
   document.getElementById('replayInning').textContent=(e.inning||b.inning)+'回'+(e.half||b.half);
-  document.getElementById('replayPlayer').textContent=e.player||'プレー';
-  document.getElementById('replayResult').textContent='プレー開始…';
+  document.getElementById('replayPlayer').textContent='打者　'+(e.player||'---');
+  document.getElementById('replayResult').textContent='投球…';
   document.getElementById('replayOuts').textContent=b.outs;
   document.getElementById('replayIndex').textContent=(pos+1)+' / '+replayFrames.length;
-  document.getElementById('replayLastPlay').textContent=(e.player||'')+'　'+(e.result||'');
+  document.getElementById('replayLastPlay').textContent=(e.player||'')+'　'+result;
+
   const rso=document.getElementById('retroScoreOverlay');
   if(rso)rso.innerHTML=(e.inning||b.inning)+'回'+(e.half||b.half)+'<br>'+b.my+' - '+b.opp;
   const rbo=document.getElementById('retroBatterOverlay');
   if(rbo)rbo.innerHTML='打者<br>'+(e.player||'---');
 
   appendReplayHistory(pos,e);
-
-  replayPhaseText('① 投球');
+  replayPhaseText('投球');
   animatePitch();
 
-  later(390,()=>{
-    replayPhaseText('② プレー');
-    document.getElementById('replayResult').textContent=e.result||'';
-    animatePlayAction(e.result||'');
+  later(timing.action,()=>{
+    replayPhaseText(kind==='steal'?'ランナースタート！':'プレー');
+    document.getElementById('replayResult').textContent=result;
+    if(kind==='steal')showSuspense('走った！');
+    if(kind==='homer')showSuspense('大きい当たり！');
+    animatePlayAction(result);
   });
 
-  later(1080,()=>{
-    replayPhaseText('③ 結果');
+  if(kind==='hit'){
+    later(850,()=>showSuspense('打球を追う！'));
+  }else if(kind==='strikeout'){
+    later(650,()=>showSuspense(result.includes('見逃し')?'見送った！':'空振り！'));
+  }else if(kind==='steal'){
+    later(850,()=>showSuspense('送球！'));
+  }else if(kind==='homer'){
+    later(1050,()=>showSuspense('伸びる！　伸びる！'));
+  }
+
+  later(timing.result,()=>{
+    hideSuspense();
+    replayPhaseText('結果');
     renderReplayBases(a.bases);
     animateRunnerChanges(b,a);
     document.getElementById('replayScore').textContent=my+' '+a.my+' − '+a.opp+' '+op;
     document.getElementById('replayCount').textContent=(e.inning||a.inning)+'回'+(e.half||a.half)+'　'+a.outs+' OUT';
     document.getElementById('replayOuts').textContent=a.outs;
-    replayCall(resultCall(e.result||''),resultMood(e.result||''));
+    if(rso)rso.innerHTML=(e.inning||a.inning)+'回'+(e.half||a.half)+'<br>'+a.my+' - '+a.opp;
+    replayCall(resultCall(result),resultMood(result));
   });
 
-  later(1950,()=>{
-    replayCallHide();
-    const phase=document.getElementById('replayPhase');
-    if(phase)phase.classList.remove('show');
+  later(timing.end,()=>{
+    replayCallHide();hideSuspense();
+    document.getElementById('replayPhase')?.classList.remove('show');
     document.querySelectorAll('.fielder').forEach(x=>x.classList.remove('activeFielder'));
     document.querySelectorAll('.replayRunner').forEach(x=>x.classList.remove('running'));
   });
