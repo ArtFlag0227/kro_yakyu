@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.10.1</title>
+<title>クロ野球 Ver.11</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -295,10 +295,85 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
   .liveScoreTable th,.liveScoreTable td{padding:3px 4px}
 }
 
+
+/* ===== Ver.11 landscape dashboard ===== */
+.gameDash{display:grid;gap:6px;padding:6px;max-width:1400px;margin:auto}
+.panel{background:rgba(13,13,13,.82);border:1px solid #ffffff2b;border-radius:10px;padding:8px;min-width:0}
+.panelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.panelHead b{font-size:13px}.miniHint,.eyebrow{font-size:10px;color:#aaa}
+.dashTop{grid-area:top}.dashScore{grid-area:score}.dashRunner{grid-area:runner}
+.dashBatter{grid-area:batter}.dashBat{grid-area:bat}.dashStrategy{grid-area:strategy}
+.dashMore{grid-area:more}.resultPanel{grid-area:result}
+.compatHidden{display:none!important}
+.tinyBtn,.tinyWide{min-height:28px!important;padding:5px 8px!important;margin:0!important;font-size:10px!important}
+.tinyBtn{width:auto!important}.tinyWide{width:100%!important}
+.actionGrid{display:grid;gap:5px}.actionGrid.six{grid-template-columns:repeat(6,minmax(0,1fr))}
+.actionGrid.four{grid-template-columns:1fr 1fr 1.15fr 1.15fr;margin-top:5px}
+.actionGrid.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.actionGrid button{margin:0!important;min-height:34px!important;padding:6px 4px!important;font-size:11px!important}
+.strategyBtn{background:#8c6a00!important}
+.compactSelects{margin-bottom:4px}
+.compactSelects select,.actionGrid select{font-size:10px;padding:6px 5px}
+.batterTopLine{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.currentBatterName{font-size:20px;font-weight:900}
+.currentBatterMeta{font-size:11px;color:#ccc;margin-top:2px}
+.currentBatterHistory{font-size:10px;color:#bbb;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.todayStats{display:grid;grid-template-columns:repeat(3,64px);border:1px solid #444;border-radius:8px;overflow:hidden}
+.todayStats div{text-align:center;padding:5px;border-left:1px solid #444}.todayStats div:first-child{border-left:0}
+.todayStats span{display:block;font-size:9px;color:#aaa}.todayStats b{font-size:16px}
+.dashScore .liveScorePanel{display:block!important;margin:0;padding:0;background:transparent;border:0}
+.dashScore .liveScoreTable{font-size:9px}.dashScore .liveScoreTable th,.dashScore .liveScoreTable td{padding:3px}
+.compactRunner{padding:4px;margin:4px 0}.compactRunner .small{display:none}
+.dashMore summary{cursor:pointer;font-weight:800;font-size:11px}
+.dashMore[open]{max-height:50vh;overflow:auto}
+#myDefenseActions:not(.hidden){display:grid!important;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+#myDefenseActions:not(.hidden) button{margin:0!important;min-height:30px!important;font-size:10px!important}
+#runnerActionPanel{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:999;width:min(92vw,620px);box-shadow:0 8px 30px #000d}
+#baseEditor{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:999;width:min(92vw,620px)}
+@media (orientation:landscape){
+  body{overflow-x:hidden}
+  header{display:none}
+  main{max-width:none!important;padding:0!important}
+  #s3{min-height:100vh}
+  .gameDash{
+    grid-template-columns:31% 69%;
+    grid-template-areas:
+      "top top"
+      "score batter"
+      "runner bat"
+      "runner strategy"
+      "more more"
+      "result result";
+    grid-template-rows:auto auto 1fr auto auto;
+    min-height:100vh;
+    align-content:start;
+  }
+  .dashTop{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .stickyScore,.attack{position:static!important;margin:0!important;min-height:34px;box-sizing:border-box}
+  .attack{padding:7px!important;font-size:13px!important}
+  .stickyScore{padding:6px!important}
+  .stickyScore .scoreMid{font-size:15px!important}
+  .dashRunner .bases{width:160px;height:100px;margin:6px auto}
+  .dashRunner .base{width:43px;height:43px}
+  .dashRunner .b1{right:12px;bottom:5px}.dashRunner .b2{left:58px;top:2px}.dashRunner .b3{left:12px;bottom:5px}
+  .dashMore{margin-bottom:2px}
+}
+@media (orientation:portrait){
+  .gameDash{
+    grid-template-columns:1fr;
+    grid-template-areas:"top" "batter" "score" "runner" "bat" "strategy" "more" "result";
+  }
+  .dashTop{display:block}
+  .actionGrid.six{grid-template-columns:repeat(3,1fr)}
+  .actionGrid.four{grid-template-columns:repeat(2,1fr)}
+  .actionGrid.five{grid-template-columns:repeat(2,1fr)}
+  .todayStats{grid-template-columns:repeat(3,1fr)}
+}
+
 </style>
 </head>
 <body>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.10.1</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.11</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -388,80 +463,104 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </section>
 
 <section id="s3" class="screen">
-  <div class="card">
-    <h2>③ 試合</h2>
-    <div class="stickyScore">
-      <span class="miniSide" id="miniInning">1回表</span>
-      <span class="scoreMid" id="miniScore">クロ 0 − 0 相手</span>
-      <span class="miniSide" id="miniOut">0 OUT</span>
-    </div>
-    <div class="big" id="inning">1回表</div>
-    <div class="attack" id="attack"></div>
+  <div class="gameDash">
 
-    <div class="attackInfo">
-      <div class="currentBatterCard">
-        <div class="currentBatterName" id="currentBatterName">現在の打者</div>
-        <div class="currentBatterHistory" id="currentBatterHistory">この試合の打席結果：まだありません</div>
+    <!-- 上段：試合状況 -->
+    <div class="dashTop">
+      <div class="stickyScore">
+        <span class="miniSide" id="miniInning">1回表</span>
+        <span class="scoreMid" id="miniScore">クロチーム 0 − 0 相手チーム</span>
+        <span class="miniSide" id="miniOut">0 OUT</span>
       </div>
-      <button class="gray scoreToggle" onclick="toggleLiveScore()">途中スコア</button>
+      <div class="attack" id="attack"></div>
     </div>
 
-    <div class="liveScorePanel hidden" id="liveScorePanel">
-      <div id="liveScoreTable"></div>
-    </div>
+    <!-- 左：途中スコア -->
+    <aside class="dashScore panel">
+      <div class="panelHead">
+        <b>途中スコア</b>
+        <button class="tinyBtn" onclick="toggleLiveScore()">開閉</button>
+      </div>
+      <div class="liveScorePanel" id="liveScorePanel">
+        <div id="liveScoreTable"></div>
+      </div>
+    </aside>
 
-    <div class="scoreboard">
-      <span class="teamBadge" id="myName">クロチーム</span>
-      <span class="scoreNum" id="myScore">0</span>
-      <span>−</span>
-      <span class="scoreNum" id="oppScore">0</span>
-      <span class="teamBadge" id="oppName">相手チーム</span>
-    </div>
+    <!-- 左：ランナー -->
+    <aside class="dashRunner panel">
+      <div class="panelHead"><b>ランナー状況</b><span id="outsMini">0 OUT</span></div>
 
-    <div class="legend">
-      <span class="chip"><i id="myLegend"></i><span id="myLegendText">自チーム</span></span>
-      <span class="chip"><i id="oppLegend"></i><span id="oppLegendText">相手</span></span>
-    </div>
+      <div class="bases">
+        <div class="base b2" id="base2"><span id="base2txt">二塁</span></div>
+        <div class="base b3" id="base3"><span id="base3txt">三塁</span></div>
+        <div class="base b1" id="base1"><span id="base1txt">一塁</span></div>
+        <button type="button" class="baseTap bt2" id="baseTap2" onclick="runnerTap(1);return false;"></button>
+        <button type="button" class="baseTap bt3" id="baseTap3" onclick="runnerTap(2);return false;"></button>
+        <button type="button" class="baseTap bt1" id="baseTap1" onclick="runnerTap(0);return false;"></button>
+      </div>
 
-    <div class="player" id="batter"></div>
+      <button class="tinyWide" onclick="openBaseEditor()">ランナー操作・修正</button>
+      <div class="changePanel hidden" id="runnerActionPanel">
+        <div class="sectionTitle" id="runnerActionTitle">ランナー操作</div>
+        <div id="runnerActionButtons"></div>
+        <button class="gray" onclick="closeRunnerActionPanel()">閉じる</button>
+      </div>
+      <div class="runnerPanel compactRunner" id="runnerPanel">
+        <div id="runnerControls"></div><div id="scoreCorrections"></div>
+        <div class="changePanel hidden" id="baseEditor"></div>
+      </div>
+    </aside>
 
-    <div class="sectionTitle">ランナー</div>
-    <div class="bases">
-      <div class="base b2" id="base2"><span id="base2txt">二塁</span></div>
-      <div class="base b3" id="base3"><span id="base3txt">三塁</span></div>
-      <div class="base b1" id="base1"><span id="base1txt">一塁</span></div>
+    <!-- 右上：現在打者 -->
+    <section class="dashBatter panel">
+      <div class="batterTopLine">
+        <div>
+          <div class="eyebrow">今の打者</div>
+          <div class="currentBatterName" id="currentBatterName">現在の打者</div>
+          <div class="currentBatterMeta" id="currentBatterMeta"></div>
+        </div>
+        <div class="todayStats">
+          <div><span>打席</span><b id="todayPA">0</b></div>
+          <div><span>安打</span><b id="todayHits">0</b></div>
+          <div><span>本塁打</span><b id="todayHR">0</b></div>
+        </div>
+      </div>
+      <div class="currentBatterHistory" id="currentBatterHistory">この試合の打席結果：まだありません</div>
+    </section>
 
-      <button type="button" class="baseTap bt2" id="baseTap2" onclick="runnerTap(1);return false;"></button>
-      <button type="button" class="baseTap bt3" id="baseTap3" onclick="runnerTap(2);return false;"></button>
-      <button type="button" class="baseTap bt1" id="baseTap1" onclick="runnerTap(0);return false;"></button>
-    </div>
-
-    <div class="changePanel hidden" id="runnerActionPanel">
-      <div class="sectionTitle" id="runnerActionTitle">ランナー操作</div>
-      <div id="runnerActionButtons"></div>
-      <button class="gray" onclick="closeRunnerActionPanel()">閉じる</button>
-    </div>
-
-    <div class="runnerPanel" id="runnerPanel">
-      <div class="small">ランナーに何か起きたら、塁のランナーをタップ</div>
-      <div id="runnerControls"></div><div id="scoreCorrections"></div>
-      <button class="gray" onclick="openBaseEditor()">ランナー最終位置を修正</button>
-      <div class="changePanel hidden" id="baseEditor"></div>
-    </div>
-
-    <div class="status">
-      <span>アウト<b id="outs">0</b></span>
-    </div>
-
-    <div class="sectionTitle">三振</div>
-    <div class="grid">
-      <button class="yellow" onclick="strikeout('空振り三振')">空振り三振</button>
-      <button class="yellow" onclick="strikeout('見逃し三振')">見逃し三振</button>
-    </div>
-
-    <div class="sectionTitle">アウトの種類</div>
-    <div class="runnerPanel">
-      <div class="runnerRow">
+    <!-- 右中央：打撃結果 -->
+    <section class="dashBat panel">
+      <div class="panelHead"><b>打撃結果</b><span class="miniHint">よく使う操作を1画面に</span></div>
+      <div class="hitLocationBox compactSelects">
+        <select id="hitArea">
+          <option value="左前">レフト前</option>
+          <option value="中前" selected>センター前</option>
+          <option value="右前">ライト前</option>
+          <option value="左越">レフトオーバー</option>
+          <option value="中越">センターオーバー</option>
+          <option value="右越">ライトオーバー</option>
+          <option value="左線">レフト線</option>
+          <option value="右線">ライト線</option>
+          <option value="内野">内野</option>
+        </select>
+        <select id="hitDetail">
+          <option value="">方向のみ</option>
+          <option value="ゴロ">ゴロ</option>
+          <option value="ライナー">ライナー</option>
+          <option value="フライ">フライ</option>
+        </select>
+      </div>
+      <div class="actionGrid six">
+        <button onclick="hit('単打')">単打</button>
+        <button class="blue" onclick="hit('二塁打')">二塁打</button>
+        <button class="purple" onclick="hit('三塁打')">三塁打</button>
+        <button class="yellow" onclick="homerun()">本塁打</button>
+        <button class="gray" onclick="reachBase('失策')">エラー</button>
+        <button class="gray" onclick="reachBase('野選')">野選</button>
+      </div>
+      <div class="actionGrid four">
+        <button class="yellow" onclick="strikeout('空振り三振')">空振り三振</button>
+        <button class="yellow" onclick="strikeout('見逃し三振')">見逃し三振</button>
         <select id="outPos">
           <option value="投">投手</option><option value="捕">捕手</option>
           <option value="一">一塁手</option><option value="二">二塁手</option>
@@ -475,96 +574,75 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
           <option value="邪飛">ファウルフライ</option>
         </select>
       </div>
-      <button class="red" onclick="recordFieldOut()">アウトを記録</button>
-      <p class="small">例：左翼手＋フライ → 「左飛」</p>
-    </div>
+      <button class="red tinyWide" onclick="recordFieldOut()">アウトを記録</button>
+    </section>
 
-    <div class="sectionTitle">打撃結果</div>
-    <div class="hitLocationBox">
-      <select id="hitArea">
-        <option value="左前">レフト前</option>
-        <option value="中前" selected>センター前</option>
-        <option value="右前">ライト前</option>
-        <option value="左越">レフトオーバー</option>
-        <option value="中越">センターオーバー</option>
-        <option value="右越">ライトオーバー</option>
-        <option value="左線">レフト線</option>
-        <option value="右線">ライト線</option>
-        <option value="内野">内野</option>
-      </select>
-      <select id="hitDetail">
-        <option value="">方向のみ</option>
-        <option value="ゴロ">ゴロ</option>
-        <option value="ライナー">ライナー</option>
-        <option value="フライ">フライ</option>
-      </select>
-    </div>
-    <div class="grid">
-      <button onclick="hit('単打')">単打</button>
-      <button class="blue" onclick="hit('二塁打')">二塁打</button>
-      <button class="purple" onclick="hit('三塁打')">三塁打</button>
-      <button class="yellow" onclick="homerun()">本塁打</button>
-    </div>
-
-    <div class="sectionTitle">バント</div>
-    <button class="gray" onclick="openBuntResult()">バント結果を選ぶ</button>
-
-    <div class="changePanel hidden" id="irregularPanel">
-      <div class="sectionTitle" id="irregularTitle"></div>
-      <div id="irregularBody"></div>
-      <button class="gray" onclick="closeIrregular()">閉じる</button>
-    </div>
-
-    <div class="sectionTitle">その他の出塁</div>
-    <div class="grid">
-      <button class="gray" onclick="reachBase('失策')">失策（エラー）</button>
-      <button class="gray" onclick="reachBase('野選')">野選（FC）</button>
-    </div>
-
-    <button onclick="run()">得点 ＋1</button>
-    <button class="gray" onclick="undo()">ひとつ戻す</button>
-
-    <div class="feedbackRow">
-      <label><input type="checkbox" id="soundOn" checked> タップ音</label>
-      <span>・</span>
-      <span>二度押し防止つき</span>
-    </div>
-
-    <div class="sectionTitle" id="changeSectionTitle">自チームの選手交代</div>
-
-    <div id="myOffenseActions">
-      <div class="small">自チーム攻撃中</div>
-      <div class="grid">
-        <button class="yellow" onclick="openPinchHitter()">自チーム 代打</button>
+    <!-- 右下：作戦と交代 -->
+    <section class="dashStrategy panel">
+      <div class="panelHead"><b>作戦・交代</b></div>
+      <div class="actionGrid five">
+        <button class="strategyBtn" onclick="openBuntResult()">バント</button>
+        <button class="yellow" onclick="openPinchHitter()">代打</button>
         <button class="blue" onclick="openEnemyPitcherChange()">敵 投手交代</button>
+        <button class="gray" onclick="undo()">ひとつ戻す</button>
+        <button class="gray" onclick="finishGame()">試合終了</button>
       </div>
-    </div>
 
-    <div id="myDefenseActions" class="hidden">
-      <div class="small">相手攻撃中：自チームは守備中です</div>
-      <div class="grid">
+      <div id="myOffenseActions" class="hidden"></div>
+      <div id="myDefenseActions" class="hidden">
         <button class="blue" onclick="openPitcherChange()">自チーム 投手交代</button>
-        <button class="gray" onclick="toggleChanges()">守備位置をまとめて変更</button>
+        <button class="gray" onclick="toggleChanges()">守備位置変更</button>
       </div>
-    </div>
 
-    <div class="changePanel hidden" id="quickChangePanel">
-      <div id="quickChangeTitle" class="sectionTitle"></div>
-      <div id="quickChangeBody"></div>
-      <button class="gray" onclick="closeQuickChange()">閉じる</button>
-    </div>
+      <div class="changePanel hidden" id="irregularPanel">
+        <div class="sectionTitle" id="irregularTitle"></div>
+        <div id="irregularBody"></div>
+        <button class="gray" onclick="closeIrregular()">閉じる</button>
+      </div>
 
-    <div class="changePanel hidden" id="changePanel">
-      <div class="sectionTitle">自チーム：現在の守備・ベンチ</div>
-      <p class="small">複数人まとめて変更して「確定」。代打もここからできます。</p>
-      <div id="changeRows"></div>
-      <button class="gray" onclick="addBenchDuringGame()">＋ 自チームのベンチ選手を追加</button>
-      <button onclick="saveChanges()">変更を確定</button>
-    </div>
+      <div class="changePanel hidden" id="quickChangePanel">
+        <div id="quickChangeTitle" class="sectionTitle"></div>
+        <div id="quickChangeBody"></div>
+        <button class="gray" onclick="closeQuickChange()">閉じる</button>
+      </div>
 
-    <button class="yellow" onclick="finishGame()">試合終了・スコアを見る</button>
+      <div class="changePanel hidden" id="changePanel">
+        <div class="sectionTitle">自チーム：現在の守備・ベンチ</div>
+        <div id="changeRows"></div>
+        <button class="gray" onclick="addBenchDuringGame()">＋ ベンチ選手</button>
+        <button onclick="saveChanges()">変更を確定</button>
+      </div>
+    </section>
 
-    <div class="resultPanel hidden" id="resultPanel">
+    <!-- その他は折りたたみ -->
+    <details class="dashMore panel">
+      <summary>その他・記録・相手編集</summary>
+      <div class="feedbackRow">
+        <label><input type="checkbox" id="soundOn" checked> タップ音</label>
+      </div>
+
+      <button class="gray" onclick="toggleOpponentChange()">相手チームの交代を記録</button>
+      <div class="changePanel hidden" id="oppChangePanel">
+        <select id="oppChangeType">
+          <option>代打</option><option>投手交代</option><option>守備変更</option><option>その他</option>
+        </select>
+        <input id="oppChangeMemo" placeholder="例：#18 代打、#1→#11 投手交代">
+        <button onclick="saveOpponentChange()">相手の変更を記録</button>
+      </div>
+
+      <button class="gray" onclick="toggleOpponentEditor()">相手メンバーを編集</button>
+      <div class="subCard" id="oppEditor" style="display:none">
+        <div class="opponentHead"><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span></div>
+        <div id="oppEditorRows"></div>
+        <button onclick="saveOpponentEditor()">相手メンバーを保存</button>
+      </div>
+
+      <div class="history" id="history"><div>プレイボール！</div></div>
+      <button class="red" onclick="resetGame()">試合をリセット</button>
+    </details>
+
+    <!-- 試合終了結果 -->
+    <div class="resultPanel hidden panel" id="resultPanel">
       <h2>試合結果・スコア</h2>
       <div id="finalScore"></div>
       <div id="inningScore"></div>
@@ -577,29 +655,21 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <button class="gray" onclick="closeResult()">試合画面に戻る</button>
     </div>
 
-    <button class="gray" onclick="toggleOpponentChange()">相手チームの交代を記録</button>
-    <div class="changePanel hidden" id="oppChangePanel">
-      <div class="sectionTitle">相手チームの交代記録</div>
-      <p class="small">相手の代打・投手交代・守備変更が分かった時だけ記録できます。</p>
-      <select id="oppChangeType">
-        <option>代打</option>
-        <option>投手交代</option>
-        <option>守備変更</option>
-        <option>その他</option>
-      </select>
-      <input id="oppChangeMemo" placeholder="例：#18 代打、#1→#11 投手交代">
-      <button onclick="saveOpponentChange()">相手の変更を記録</button>
+    <!-- 既存JS互換用の非表示要素 -->
+    <div class="compatHidden">
+      <div id="inning">1回表</div>
+      <div class="scoreboard">
+        <span id="myName">クロチーム</span><span id="myScore">0</span>
+        <span id="oppScore">0</span><span id="oppName">相手チーム</span>
+      </div>
+      <div id="myLegend"></div><div id="oppLegend"></div>
+      <div id="myLegendText"></div><div id="oppLegendText"></div>
+      <div class="player" id="batter"></div>
+      <div class="status"><span>アウト<b id="outs">0</b></span></div>
+      <div id="changeSectionTitle"></div>
+      <button onclick="run()">得点 ＋1</button>
     </div>
 
-    <button class="gray" onclick="toggleOpponentEditor()">相手メンバーを編集</button>
-    <div class="subCard" id="oppEditor" style="display:none">
-      <p class="small">試合後にメンバー表を見ながら名前を追加できます</p>
-      <div class="opponentHead"><span>打順</span><span>背番号</span><span>選手名</span><span>守備</span></div><div id="oppEditorRows"></div>
-      <button onclick="saveOpponentEditor()">相手メンバーを保存</button>
-    </div>
-
-    <div class="history" id="history"><div>プレイボール！</div></div>
-    <button class="red" onclick="resetGame()">試合をリセット</button>
   </div>
 </section>
 
@@ -1137,7 +1207,7 @@ function getBatterHistory(){
 }
 function toggleLiveScore(){
   const panel=document.getElementById('liveScorePanel');
-  panel.classList.toggle('hidden');
+  panel.style.display = panel.style.display==='none' ? 'block' : 'none';
   renderLiveScore();
 }
 function renderLiveScore(){
@@ -1166,15 +1236,35 @@ function renderCurrentBatterSummary(){
   const histEl=document.getElementById('currentBatterHistory');
   if(!nameEl||!histEl)return;
 
-  nameEl.textContent='打者：'+getCurrentBatterLabel();
+  nameEl.textContent=getCurrentBatterLabel();
 
   const hist=getBatterHistory();
   histEl.textContent=hist.length
-    ? 'この試合：'+hist.join(' ｜ ')
-    : 'この試合の打席結果：まだありません';
+    ? '今日の打席：'+hist.map((x,i)=>(i+1)+' '+x).join(' ｜ ')
+    : '今日の打席：まだありません';
 
-  const live=document.getElementById('liveScorePanel');
-  if(live && !live.classList.contains('hidden')) renderLiveScore();
+  const meta=document.getElementById('currentBatterMeta');
+  if(meta){
+    if(st.top){
+      meta.textContent=(positions[st.batter]?'守備 '+positions[st.batter]+'　':'')+throws[st.batter]+'投'+bats[st.batter]+'打';
+    }else{
+      meta.textContent=(oppPositions[st.oppBatter]?'守備 '+oppPositions[st.oppBatter]+'　':'')+oppThrows[st.oppBatter]+'投'+oppBats[st.oppBatter]+'打';
+    }
+  }
+
+  const results=hist;
+  const hitWords=['単打','二塁打','三塁打','本塁打','バントヒット'];
+  const hits=results.filter(r=>hitWords.some(w=>r.includes(w))).length;
+  const hrs=results.filter(r=>r.includes('本塁打')).length;
+  const pa=document.getElementById('todayPA'), h=document.getElementById('todayHits'), hr=document.getElementById('todayHR');
+  if(pa)pa.textContent=results.length;
+  if(h)h.textContent=hits;
+  if(hr)hr.textContent=hrs;
+
+  const outsMini=document.getElementById('outsMini');
+  if(outsMini)outsMini.textContent=st.o+' OUT';
+
+  renderLiveScore();
 }
 
 function currentBatterName(){
