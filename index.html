@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.13.5</title>
+<title>クロ野球 Ver.13.6</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -1052,7 +1052,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 }
 
 
-/* ===== Ver.13.5 STADIUM FIRST REPLAY ===== */
+/* ===== Ver.13.6 STADIUM FIRST REPLAY ===== */
 @media (orientation:landscape){
   #s5 .replayPage{padding:2px!important}
   #s5 .replayHeader{
@@ -1130,8 +1130,8 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 }
 #s5 .replaySuspense.show{opacity:1}
 
-/* Ver.13.5 DOUBLE PLAY */
-.actionGrid.twoDoublePlay{grid-template-columns:1fr 1fr;margin-top:5px}
+/* Ver.13.6 DOUBLE PLAY */
+.actionGrid.twoDoublePlay{grid-template-columns:1fr 1fr 1fr;margin-top:5px}
 .actionGrid.twoDoublePlay button{margin:0!important;min-height:32px!important;font-size:10px!important}
 .dpChoice{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .dpChoice button{margin:0!important}
@@ -1140,7 +1140,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </head>
 <body>
 <button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.5</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.6</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -1345,6 +1345,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
       <div class="actionGrid twoDoublePlay">
 <button class="red" onclick="recordFieldOut()">アウトを記録</button>
 <button class="purple" onclick="openDoublePlay()">併殺／ダブルプレー</button>
+<button class="blue" onclick="openSacFly()">犠牲フライ／タッチアップ</button>
 </div>
     </section>
 
@@ -3197,8 +3198,11 @@ function openDoublePlay(){
   st.bases.forEach((runner,i)=>{
     if(!runner)return;
     html+='<button class="red" onclick="doublePlayBatterRunner('+i+')">'+
-      '打者＋'+(i+1)+'塁走者アウト</button>';
+      'ゴロ併殺：打者＋'+(i+1)+'塁走者</button>';
   });
+
+  html+='<button class="purple" onclick="openCaughtBallDoublePlay(\'ライナー\')">ライナー併殺</button>';
+  html+='<button class="blue" onclick="openCaughtBallDoublePlay(\'フライ\')">フライ併殺</button>';
 
   if(st.bases.filter(Boolean).length>=2){
     html+='<button class="yellow" onclick="openDoublePlayTwoRunners()">走者2人がアウト</button>';
@@ -3249,6 +3253,55 @@ function doublePlayBatterRunner(baseIndex){
   }else{
     render();
   }
+}
+
+
+function openCaughtBallDoublePlay(kind){
+  const occupied=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null);
+  if(!occupied.length){alert('ランナーがいません。');return;}
+
+  const body=document.getElementById('runnerActionButtons');
+  const title=document.getElementById('runnerActionTitle');
+  title.textContent=kind+'併殺：捕球した守備位置';
+
+  const positions=['投','捕','一','二','三','遊','左','中','右'];
+  let html='<div class="runnerActionGrid">';
+  positions.forEach(pos=>{
+    html+='<button class="purple" onclick="chooseCaughtBallRunner(\\''+kind+'\\',\\''+pos+'\\')">'+pos+'</button>';
+  });
+  html+='<button class="gray" onclick="openDoublePlay()">← 戻る</button></div>';
+  body.innerHTML=html;
+}
+
+function chooseCaughtBallRunner(kind,pos){
+  const occupied=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null);
+  const body=document.getElementById('runnerActionButtons');
+  document.getElementById('runnerActionTitle').textContent=kind+'併殺：帰塁できなかった走者';
+
+  let html='<div class="runnerActionGrid">';
+  occupied.forEach(i=>{
+    html+='<button class="red" onclick="caughtBallDoublePlay(\\''+kind+'\\',\\''+pos+'\\','+i+')">'+
+      (i+1)+'塁 '+st.bases[i]+'</button>';
+  });
+  html+='<button class="gray" onclick="openCaughtBallDoublePlay(\\''+kind+'\\')">← 戻る</button></div>';
+  body.innerHTML=html;
+}
+
+function caughtBallDoublePlay(kind,pos,i){
+  const runner=st.bases[i]; if(!runner)return;
+  save();
+  const batter=currentBatterName();
+  st.bases[i]=null;
+  st.o+=2;
+  const shortKind=kind==='ライナー'?'直':'飛';
+  const result=pos+shortKind+'併殺';
+  log(batter+' '+result+'（'+runner+' 帰塁できずアウト）');
+  recordPlay(result,batter);
+  st.b=0;st.s=0;
+  if(st.top)st.batter=(st.batter+1)%players.length;
+  else st.oppBatter=(st.oppBatter+1)%9;
+  closeRunnerActionPanel();
+  if(st.o>=3)changeSides();else render();
 }
 
 function openDoublePlayTwoRunners(){
@@ -3363,6 +3416,73 @@ function doublePlayBrokenRunner(i){
   }else{
     render();
   }
+}
+
+
+function openSacFly(){
+  if(!st.bases.some(Boolean)){alert('ランナーがいません。');return;}
+  if(st.o>=2){alert('2アウトでは犠牲フライは記録できません。');return;}
+
+  const panel=document.getElementById('runnerActionPanel');
+  document.getElementById('runnerActionTitle').textContent='犠牲フライ／タッチアップ';
+  const body=document.getElementById('runnerActionButtons');
+
+  let html='<div class="runnerActionGrid">';
+  if(st.bases[2]) html+='<button class="blue" onclick="sacFlyScore()">三塁走者ホームイン（1点）</button>';
+  if(st.bases[1] && !st.bases[2]) html+='<button class="yellow" onclick="sacFlyAdvance(1,2)">二塁走者→三塁</button>';
+  if(st.bases[0] && !st.bases[1]) html+='<button class="yellow" onclick="sacFlyAdvance(0,1)">一塁走者→二塁</button>';
+  html+='<button class="gray" onclick="sacFlyHold()">走者そのまま（フライアウト）</button>';
+  html+='<button class="red" onclick="openTagUpOut()">タッチアップした走者がアウト</button>';
+  html+='<button class="gray" onclick="closeRunnerActionPanel()">閉じる</button></div>';
+  body.innerHTML=html;
+  panel.classList.remove('hidden');panel.classList.add('show');
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'center'}),30);
+}
+
+function finishSacFly(result){
+  const batter=currentBatterName();
+  st.o++;st.b=0;st.s=0;
+  log(batter+' '+result);recordPlay(result,batter);
+  if(st.top)st.batter=(st.batter+1)%players.length;else st.oppBatter=(st.oppBatter+1)%9;
+  closeRunnerActionPanel();
+  if(st.o>=3)changeSides();else render();
+}
+function sacFlyScore(){
+  save();
+  const runner=st.bases[2]; if(!runner)return;
+  st.bases[2]=null;
+  if(st.top)st.my++;else st.opp++;
+  addInningRun(st.top?'my':'opp',1);
+  st.lastScored=[{name:runner,from:2}];
+  finishSacFly('犠牲フライ（'+runner+' 生還）');
+}
+function sacFlyAdvance(from,to){
+  save();
+  const runner=st.bases[from];if(!runner)return;
+  st.bases[from]=null;st.bases[to]=runner;
+  finishSacFly('犠牲フライ・タッチアップ（'+runner+' '+(to+1)+'塁へ）');
+}
+function sacFlyHold(){save();finishSacFly('フライアウト（走者進塁なし）');}
+
+function openTagUpOut(){
+  const occupied=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null);
+  let html='<div class="runnerActionGrid">';
+  occupied.forEach(i=>{
+    html+='<button class="red" onclick="tagUpOut('+i+')">'+(i+1)+'塁 '+st.bases[i]+' がアウト</button>';
+  });
+  html+='<button class="gray" onclick="openSacFly()">← 戻る</button></div>';
+  document.getElementById('runnerActionTitle').textContent='タッチアップ：走者アウト';
+  document.getElementById('runnerActionButtons').innerHTML=html;
+}
+function tagUpOut(i){
+  const runner=st.bases[i];if(!runner)return;
+  save();st.bases[i]=null;st.o+=2;st.b=0;st.s=0;
+  const batter=currentBatterName();
+  log(batter+' フライアウト＋'+runner+' タッチアップアウト');
+  recordPlay('フライ併殺',batter);
+  if(st.top)st.batter=(st.batter+1)%players.length;else st.oppBatter=(st.oppBatter+1)%9;
+  closeRunnerActionPanel();
+  if(st.o>=3)changeSides();else render();
 }
 
 function recordFieldOut(){
