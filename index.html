@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="クロ野球">
-<title>クロ野球 Ver.13.4</title>
+<title>クロ野球 Ver.13.5</title>
 <style>
 :root{
   --bg:#101010; --panel:#1d1d1d; --panel2:#292929; --text:#fff; --muted:#aaa;
@@ -1052,7 +1052,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 }
 
 
-/* ===== Ver.13.4 STADIUM FIRST REPLAY ===== */
+/* ===== Ver.13.5 STADIUM FIRST REPLAY ===== */
 @media (orientation:landscape){
   #s5 .replayPage{padding:2px!important}
   #s5 .replayHeader{
@@ -1130,7 +1130,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 }
 #s5 .replaySuspense.show{opacity:1}
 
-/* Ver.13.4 DOUBLE PLAY */
+/* Ver.13.5 DOUBLE PLAY */
 .actionGrid.twoDoublePlay{grid-template-columns:1fr 1fr;margin-top:5px}
 .actionGrid.twoDoublePlay button{margin:0!important;min-height:32px!important;font-size:10px!important}
 .dpChoice{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -1140,7 +1140,7 @@ body.game-active header{background:rgba(10,10,10,.72);backdrop-filter:blur(5px)}
 </head>
 <body>
 <button id="globalHomeBtn" class="globalHomeBtn" onclick="returnToStart()">↩ スタート</button>
-<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.4</small></header>
+<header>⚾ クロ野球 <small style="font-size:11px;color:#aaa">Ver.13.5</small></header>
 <main id="appMain">
 
 <section id="s1" class="screen active">
@@ -3175,56 +3175,194 @@ function strikeout(kind){
   render();
 }
 
+
 function openDoublePlay(){
-  if(!st.bases.some(Boolean)){alert('ランナーがいません。併殺には塁上のランナーが必要です。');return;}
-  if(st.o>=2){alert('すでに2アウトなので通常の併殺は成立しません。');return;}
-  const box=document.getElementById('irregularPanel'),body=document.getElementById('irregularBody');
-  document.getElementById('irregularTitle').textContent='併殺／ダブルプレー';
-  let buttons='';
-  st.bases.forEach((r,i)=>{if(r)buttons+='<button class="red" onclick="doublePlayBatterRunner('+i+')">打者＋'+(i+1)+'塁走者アウト</button>';});
-  body.innerHTML='<div class="small" style="margin-bottom:7px">通常併殺・変則併殺・併殺崩れを選べます。</div><div class="dpChoice">'+buttons+
-    '<button class="yellow" onclick="openDoublePlayTwoRunners()">走者2人がアウト</button>'+
-    '<button class="gray" onclick="doublePlayBroken()">併殺崩れ（1アウト）</button></div>';
-  box.classList.remove('hidden');
+  if(!st.bases.some(Boolean)){
+    alert('ランナーがいません。');
+    return;
+  }
+  if(st.o>=2){
+    alert('2アウトでは通常のダブルプレーはありません。');
+    return;
+  }
+
+  const panel=document.getElementById('runnerActionPanel');
+  const title=document.getElementById('runnerActionTitle');
+  const body=document.getElementById('runnerActionButtons');
+
+  title.textContent='併殺／ダブルプレー';
+
+  let html='<div class="runnerActionGrid">';
+
+  st.bases.forEach((runner,i)=>{
+    if(!runner)return;
+    html+='<button class="red" onclick="doublePlayBatterRunner('+i+')">'+
+      '打者＋'+(i+1)+'塁走者アウト</button>';
+  });
+
+  if(st.bases.filter(Boolean).length>=2){
+    html+='<button class="yellow" onclick="openDoublePlayTwoRunners()">走者2人がアウト</button>';
+  }
+
+  html+='<button class="gray" onclick="doublePlayBroken()">併殺崩れ（1アウト）</button>';
+  html+='<button class="gray" onclick="closeRunnerActionPanel()">閉じる</button>';
+  html+='</div>';
+
+  body.innerHTML=html;
+  panel.classList.remove('hidden');
+  panel.classList.add('show');
+
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'center'}),30);
 }
+
 function doublePlayLabel(){
-  const p=document.getElementById('outPos')?.value||'遊',t=document.getElementById('outType')?.value||'ゴロ';
-  return p+t+'併殺';
+  const pos=document.getElementById('outPos')?.value||'遊';
+  const type=document.getElementById('outType')?.value||'ゴロ';
+  return pos+type+'併殺';
 }
-function doublePlayBatterRunner(i){
-  const runner=st.bases[i];if(!runner)return;save();
-  const batter=currentBatterName(),result=doublePlayLabel();
-  st.bases[i]=null;log(batter+' '+result+'（'+runner+'＋打者アウト）');recordPlay(result,batter);
-  st.o+=2;st.b=0;st.s=0;
-  if(st.top)st.batter=(st.batter+1)%players.length;else st.oppBatter=(st.oppBatter+1)%9;
-  closeIrregular();if(st.o>=3)changeSides();else render();
+
+function doublePlayBatterRunner(baseIndex){
+  const runner=st.bases[baseIndex];
+  if(!runner)return;
+
+  save();
+
+  const batter=currentBatterName();
+  const result=doublePlayLabel();
+
+  st.bases[baseIndex]=null;
+  st.o+=2;
+
+  log(batter+' '+result+'（'+runner+'＋打者アウト）');
+  recordPlay(result,batter);
+
+  st.b=0;
+  st.s=0;
+
+  if(st.top)st.batter=(st.batter+1)%players.length;
+  else st.oppBatter=(st.oppBatter+1)%9;
+
+  closeRunnerActionPanel();
+
+  if(st.o>=3){
+    changeSides();
+  }else{
+    render();
+  }
 }
+
 function openDoublePlayTwoRunners(){
-  const occ=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null);
-  if(occ.length<2){alert('走者が2人以上いる時に使えます');return;}
-  let h='<div class="small">アウトになった走者を2人選択</div><div class="dpChoice">';
-  for(let a=0;a<occ.length;a++)for(let b=a+1;b<occ.length;b++){let i=occ[a],j=occ[b];h+='<button class="red" onclick="doublePlayTwoRunners('+i+','+j+')">'+(i+1)+'塁 '+st.bases[i]+' ＋ '+(j+1)+'塁 '+st.bases[j]+'</button>';}
-  document.getElementById('irregularBody').innerHTML=h+'<button class="gray" onclick="openDoublePlay()">← 戻る</button></div>';
+  const occupied=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null);
+  if(occupied.length<2){
+    alert('走者が2人以上いる時に使えます。');
+    return;
+  }
+
+  const body=document.getElementById('runnerActionButtons');
+  const title=document.getElementById('runnerActionTitle');
+  title.textContent='走者2人がアウト';
+
+  let html='<div class="runnerActionGrid">';
+
+  for(let a=0;a<occupied.length;a++){
+    for(let b=a+1;b<occupied.length;b++){
+      const i=occupied[a],j=occupied[b];
+      html+='<button class="red" onclick="doublePlayTwoRunners('+i+','+j+')">'+
+        (i+1)+'塁 '+st.bases[i]+' ＋ '+(j+1)+'塁 '+st.bases[j]+'</button>';
+    }
+  }
+
+  html+='<button class="gray" onclick="openDoublePlay()">← 戻る</button>';
+  html+='</div>';
+  body.innerHTML=html;
 }
+
 function doublePlayTwoRunners(i,j){
-  if(!st.bases[i]||!st.bases[j])return;save();
-  const r1=st.bases[i],r2=st.bases[j];st.bases[i]=null;st.bases[j]=null;st.o+=2;
+  if(!st.bases[i] || !st.bases[j])return;
+
+  save();
+
+  const r1=st.bases[i];
+  const r2=st.bases[j];
+
+  st.bases[i]=null;
+  st.bases[j]=null;
+  st.o+=2;
+
   log(r1+'・'+r2+' 走者2人併殺');
-  playEvents.push({inning:st.inning,half:st.top?'表':'裏',side:st.top?'my':'opp',player:r1+'・'+r2,result:'走者2人併殺'});
-  closeIrregular();if(st.o>=3)changeSides();else render();
+
+  playEvents.push({
+    inning:st.inning,
+    half:st.top?'表':'裏',
+    side:st.top?'my':'opp',
+    player:r1+'・'+r2,
+    result:'走者2人併殺'
+  });
+
+  closeRunnerActionPanel();
+
+  // 打者は打席継続
+  if(st.o>=3){
+    changeSides();
+  }else{
+    render();
+  }
 }
+
 function doublePlayBroken(){
-  const occ=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null),body=document.getElementById('irregularBody');
-  let h='<div class="small">アウトになった走者を選択。打者は一塁セーフ。</div><div class="dpChoice">';
-  occ.forEach(i=>h+='<button class="yellow" onclick="doublePlayBrokenRunner('+i+')">'+(i+1)+'塁 '+st.bases[i]+' がアウト</button>');
-  body.innerHTML=h+'<button class="gray" onclick="openDoublePlay()">← 戻る</button></div>';
+  const occupied=st.bases.map((r,i)=>r?i:null).filter(i=>i!==null);
+  const body=document.getElementById('runnerActionButtons');
+  const title=document.getElementById('runnerActionTitle');
+
+  title.textContent='併殺崩れ：どの走者がアウト？';
+
+  let html='<div class="runnerActionGrid">';
+
+  occupied.forEach(i=>{
+    html+='<button class="yellow" onclick="doublePlayBrokenRunner('+i+')">'+
+      (i+1)+'塁 '+st.bases[i]+' がアウト</button>';
+  });
+
+  html+='<button class="gray" onclick="openDoublePlay()">← 戻る</button>';
+  html+='</div>';
+  body.innerHTML=html;
 }
+
 function doublePlayBrokenRunner(i){
-  const runner=st.bases[i];if(!runner)return;save();
-  const batter=currentBatterName();st.bases[i]=null;st.bases[0]=batter;st.o++;
-  log(batter+' 併殺崩れ（'+runner+'アウト・打者一塁セーフ）');recordPlay('併殺崩れ',batter);
-  st.b=0;st.s=0;if(st.top)st.batter=(st.batter+1)%players.length;else st.oppBatter=(st.oppBatter+1)%9;
-  closeIrregular();if(st.o>=3)changeSides();else render();
+  const runner=st.bases[i];
+  if(!runner)return;
+
+  save();
+
+  const batter=currentBatterName();
+
+  st.bases[i]=null;
+
+  // 打者は一塁セーフ。もし一塁が残っていたら、そこで止めて手動修正を促す。
+  if(st.bases[0]){
+    alert('一塁に別のランナーが残っています。先にランナー位置を修正してください。');
+    return;
+  }
+
+  st.bases[0]=batter;
+  st.o++;
+
+  log(batter+' 併殺崩れ（'+runner+'アウト・打者一塁セーフ）');
+  recordPlay('併殺崩れ',batter);
+
+  st.b=0;
+  st.s=0;
+
+  if(st.top)st.batter=(st.batter+1)%players.length;
+  else st.oppBatter=(st.oppBatter+1)%9;
+
+  closeRunnerActionPanel();
+
+  if(st.o>=3){
+    changeSides();
+  }else{
+    render();
+  }
 }
 
 function recordFieldOut(){
