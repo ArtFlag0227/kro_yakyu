@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>クロ野球 連動テスト</title>
+<style>
+:root{--bg:#101010;--panel:#1b1b1b;--text:#fff;--muted:#aaa;--green:#0b8f68;--red:#b23a3a;--yellow:#f0b429}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+header{padding:14px;text-align:center;background:#202020;font-size:20px;font-weight:900}
+main{max-width:900px;margin:auto;padding:10px}.card{background:var(--panel);border:1px solid #3c3c3c;border-radius:14px;padding:12px;margin-bottom:10px}
+h2,h3{margin:4px 0 10px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+button{border:0;border-radius:10px;padding:12px 8px;background:var(--green);color:white;font-weight:900;font-size:14px}
+button.out{background:#7f2929}button.err{background:#8a6d00}button.gray{background:#555}
+.score{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center}
+.score .num{font-size:38px;font-weight:1000}.status{display:flex;justify-content:space-around;text-align:center;margin-top:8px}.status b{display:block;font-size:22px}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.6;background:#0e0e0e;border-radius:10px;padding:8px;min-height:90px;max-height:240px;overflow:auto}
+.field{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border:3px solid #315b3a;border-radius:12px;background:linear-gradient(#2d7843 0 57%,#8b6137 57% 100%)}
+.diamond{position:absolute;left:39%;top:43%;width:22%;height:40%;background:#936432;transform:rotate(45deg)}
+.base{position:absolute;width:14px;height:14px;background:#fff;transform:rotate(45deg);z-index:4}.b1{left:63%;bottom:25%}.b2{left:50%;bottom:42%}.b3{right:63%;bottom:25%}.hb{left:50%;bottom:7%}
+.player{position:absolute;width:21px;height:27px;background:#1f6fd1;border-radius:5px;z-index:7;border:2px solid #fff}.p{left:49%;bottom:31%}.f{left:67%;bottom:29%}.bat{left:53%;bottom:8%;background:#c43d3d}.run{left:53%;bottom:8%;background:#f0b429;display:none}.ball{position:absolute;width:9px;height:9px;border-radius:50%;background:#fff;z-index:20;left:51%;bottom:14%;opacity:0}
+.call{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);padding:8px 14px;background:#050505e8;border:3px solid #fff;font-weight:1000;font-size:24px;display:none;z-index:40}
+.small{font-size:12px;color:var(--muted)}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#292929;margin:2px;font-size:11px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.score .num{font-size:28px}.call{font-size:20px}}
+</style>
+</head>
+<body>
+<header>⚾ クロ野球・スコア ⇄ リプレイ 連動テスト</header>
+<main>
+<div class="card">
+  <h3>同じ1プレーのデータを、スコアとリプレイの両方で使う</h3>
+  <div class="small">まずは「ピッチャーゴロ」の3パターンだけで連動確認するテスト版。</div>
+</div>
+
+<div class="card">
+  <div class="score">
+    <div><div>クロチーム</div><div class="num" id="myScore">0</div></div>
+    <div><b>−</b></div>
+    <div><div>相手チーム</div><div class="num" id="oppScore">0</div></div>
+  </div>
+  <div class="status">
+    <div>OUT<b id="outs">0</b></div>
+    <div>HIT<b id="hits">0</b></div>
+    <div>ERROR<b id="errors">0</b></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>記録入力</h3>
+  <div class="grid">
+    <button class="out" onclick="recordPitcherGrounder('OUT')">ピッチャーゴロ → OUT</button>
+    <button class="err" onclick="recordPitcherGrounder('E1')">ピッチャーゴロ → E1・SAFE</button>
+    <button onclick="recordPitcherGrounder('SAFE')">ピッチャーゴロ → SAFE</button>
+    <button class="gray" onclick="resetGame()">リセット</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>共通プレーデータ</h3>
+  <div id="dataView" class="log">まだプレーはありません</div>
+</div>
+
+<div class="card">
+  <h3>自動リプレイ</h3>
+  <div class="field" id="field">
+    <div class="diamond"></div>
+    <div class="base hb"></div><div class="base b1"></div><div class="base b2"></div><div class="base b3"></div>
+    <div class="player p" id="pitcher"></div>
+    <div class="player f" id="first"></div>
+    <div class="player bat" id="batter"></div>
+    <div class="player run" id="runner"></div>
+    <div class="ball" id="ball"></div>
+    <div class="call" id="call"></div>
+  </div>
+  <div style="margin-top:8px">
+    <span class="badge">1 = ピッチャー</span>
+    <span class="badge">3 = ファースト</span>
+    <span class="badge">HB = 本塁</span>
+    <span class="badge">1B = 一塁</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3>プレー履歴</h3>
+  <div id="history" class="log">まだありません</div>
+</div>
+</main>
+
+<script>
+const game = {
+  score:{my:0,opp:0},
+  outs:0,hits:0,errors:0,
+  plays:[]
+};
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function setPos(el,left,bottom){el.style.left=left;el.style.bottom=bottom;}
+function showCall(text){
+  const c=document.getElementById('call');
+  c.textContent=text;c.style.display='block';
+  setTimeout(()=>c.style.display='none',900);
+}
+
+function makePlay(result){
+  const p={
+    id:Date.now(),
+    inning:1,
+    half:'表',
+    offense:'my',
+    batter:'B',
+    ballType:'GROUND',
+    fielder:1,
+    fieldingBase:'P',
+    throwTo:'1B',
+    result:result==='OUT'?'OUT':'SAFE',
+    error:result==='E1'?'E1':null,
+    scoring:{
+      batterResult: result==='E1' ? '投失' : (result==='OUT' ? '投ゴロ' : '投ゴロ内野安打'),
+      hit: result==='SAFE',
+      out: result==='OUT',
+      error: result==='E1'
+    },
+    replay:[
+      'PITCH:1→HB',
+      'CONTACT:B→GROUND',
+      'BALL:HB→1',
+      'FIELD:1',
+      result==='E1' ? 'THROW_ERROR:1→1B' : 'THROW:1→1B',
+      'RUN:B HB→1B',
+      result==='OUT' ? 'JUDGE:OUT@1B' : 'JUDGE:SAFE@1B'
+    ]
+  };
+  return p;
+}
+
+async function recordPitcherGrounder(kind){
+  const play=makePlay(kind);
+  game.plays.push(play);
+
+  // スコア側も、同じ play だけを見る
+  if(play.scoring.out) game.outs++;
+  if(play.scoring.hit) game.hits++;
+  if(play.scoring.error) game.errors++;
+
+  // 3アウトなら次のイニングへ、という本体ルールへ繋げられる
+  if(game.outs>=3) game.outs=0;
+
+  render();
+  await replay(play);
+}
+
+function render(){
+  document.getElementById('myScore').textContent=game.score.my;
+  document.getElementById('oppScore').textContent=game.score.opp;
+  document.getElementById('outs').textContent=game.outs;
+  document.getElementById('hits').textContent=game.hits;
+  document.getElementById('errors').textContent=game.errors;
+
+  const last=game.plays[game.plays.length-1];
+  document.getElementById('dataView').textContent=last ? JSON.stringify(last,null,2) : 'まだプレーはありません';
+
+  document.getElementById('history').innerHTML=game.plays.length
+    ? game.plays.map((p,i)=>`${i+1}. ${p.scoring.batterResult} / 判定=${p.result}${p.error?' / '+p.error:''}`).join('<br>')
+    : 'まだありません';
+}
+
+async function replay(play){
+  const ball=document.getElementById('ball');
+  const runner=document.getElementById('runner');
+  const batter=document.getElementById('batter');
+
+  batter.style.display='block';
+  runner.style.display='none';
+  ball.style.opacity=0;
+  setPos(ball,'51%','14%');
+  setPos(runner,'53%','8%');
+
+  await sleep(250);
+
+  // 投球
+  ball.style.opacity=1;
+  ball.style.transition='all .45s linear';
+  setPos(ball,'52%','9%');
+  await sleep(500);
+
+  // 打球 → 投手
+  setPos(ball,'50%','31%');
+  await sleep(520);
+
+  // 打者走者スタート
+  batter.style.display='none';
+  runner.style.display='block';
+  runner.style.transition='all .95s linear';
+  setPos(runner,'61%','24%');
+
+  await sleep(180);
+
+  if(play.error==='E1'){
+    // 悪送球：一塁から少し外す
+    setPos(ball,'74%','35%');
+    await sleep(780);
+    showCall('SAFE  E1');
+  }else{
+    // 正常送球
+    ball.style.transition='all .60s linear';
+    setPos(ball,'68%','31%');
+
+    if(play.result==='OUT'){
+      // OUTなら「ボールを先に到着」させる
+      await sleep(620);
+      showCall('OUT');
+    }else{
+      // SAFEなら「走者を先に到着」させる
+      await sleep(860);
+      showCall('SAFE');
+    }
+  }
+}
+
+function resetGame(){
+  game.score.my=0;game.score.opp=0;game.outs=0;game.hits=0;game.errors=0;game.plays=[];
+  const ball=document.getElementById('ball'),runner=document.getElementById('runner'),batter=document.getElementById('batter');
+  ball.style.opacity=0;runner.style.display='none';batter.style.display='block';
+  render();
+}
+render();
+</script>
+</body>
+</html>
