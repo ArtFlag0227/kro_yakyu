@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="クロ野球">
+<title>クロ野球</title>
+<style>
+body{margin:0;background:#101010;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+header{padding:18px;text-align:center;background:#202020;font-weight:800;font-size:22px}
+main{max-width:650px;margin:auto;padding:18px}
+.screen{display:none}.screen.active{display:block}
+.card{background:#1d1d1d;border:1px solid #333;border-radius:16px;padding:20px}
+h2{text-align:center}
+.field{margin:14px 0}.field label{display:block;color:#bbb;margin-bottom:6px}
+input{box-sizing:border-box;width:100%;padding:14px;border-radius:9px;border:1px solid #555;background:#292929;color:#fff;font-size:17px}
+button{width:100%;padding:17px;margin-top:12px;border:0;border-radius:10px;background:#087f5b;color:#fff;font-size:18px;font-weight:700}
+.lineupRow{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;margin:8px 0}
+.order{text-align:center;font-weight:800;font-size:17px}
+.lineupRow input{padding:12px}
+.player{background:#292929;padding:13px;border-radius:9px;margin:8px 0}
+.big{text-align:center;font-size:27px;font-weight:800;margin:16px 0}
+.scoreboard{display:flex;align-items:center;justify-content:center;gap:16px;font-size:22px;font-weight:800;flex-wrap:wrap}
+.scoreNum{font-size:38px}
+.status{display:flex;justify-content:space-around;background:#292929;border-radius:12px;padding:15px;margin:16px 0;text-align:center}
+.status b{display:block;font-size:25px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid button{margin:0}
+.red{background:#9b2c2c}.gray{background:#555}.yellow{background:#8a6d00}.blue{background:#245f8f}.purple{background:#6b3f8f}
+.history{margin-top:16px;max-height:220px;overflow:auto;background:#151515;border-radius:10px;padding:10px;font-size:14px}
+.history div{padding:6px;border-bottom:1px solid #333}
+.small{font-size:14px;color:#bbb;text-align:center;margin-top:8px}
+.sectionTitle{margin:18px 0 8px;font-weight:800;color:#ddd}
+</style>
+</head>
+<body>
+<header>⚾ クロ野球</header>
+<main>
+<section id="s1" class="screen active">
+  <div class="card">
+    <h2>① 試合設定</h2>
+    <div class="field"><label>自チーム</label><input id="myteam" value="クロチーム"></div>
+    <div class="field"><label>相手チーム</label><input id="opp" value="相手チーム"></div>
+    <div class="field"><label>球場</label><input id="field" value="〇〇グラウンド"></div>
+    <button onclick="go2()">スタメンへ →</button>
+  </div>
+</section>
+
+<section id="s2" class="screen">
+  <div class="card">
+    <h2>② スタメン</h2>
+    <p class="small">1番〜9番まで選手名を入力できます</p>
+    <div id="lineup"></div>
+    <button onclick="go3()">試合開始 →</button>
+  </div>
+</section>
+
+<section id="s3" class="screen">
+  <div class="card">
+    <h2>③ 試合</h2>
+    <div class="big" id="inning">1回表</div>
+    <div class="scoreboard">
+      <span id="myName">クロチーム</span>
+      <span class="scoreNum" id="myScore">0</span>
+      <span>−</span>
+      <span class="scoreNum" id="oppScore">0</span>
+      <span id="oppName">相手チーム</span>
+    </div>
+
+    <div class="player" id="batter"></div>
+
+    <div class="status">
+      <span>ボール<b id="balls">0</b></span>
+      <span>ストライク<b id="strikes">0</b></span>
+      <span>アウト<b id="outs">0</b></span>
+    </div>
+
+    <div class="sectionTitle">カウント・アウト</div>
+    <div class="grid">
+      <button onclick="ball()">ボール</button>
+      <button class="yellow" onclick="strike()">ストライク</button>
+      <button class="red" onclick="out()">アウト</button>
+      <button class="gray" onclick="undo()">ひとつ戻す</button>
+    </div>
+
+    <div class="sectionTitle">打撃結果</div>
+    <div class="grid">
+      <button onclick="hit('単打')">単打</button>
+      <button class="blue" onclick="hit('二塁打')">二塁打</button>
+      <button class="purple" onclick="hit('三塁打')">三塁打</button>
+      <button class="yellow" onclick="homerun()">本塁打</button>
+    </div>
+
+    <button onclick="run()">得点 ＋1</button>
+
+    <div class="history" id="history"><div>プレイボール！</div></div>
+    <button class="red" onclick="resetGame()">試合をリセット</button>
+  </div>
+</section>
+</main>
+
+<script>
+let players=['山田','佐藤','鈴木','','','','','',''];
+let st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
+let stack=[];
+
+const lineup=document.getElementById('lineup');
+players.forEach((p,i)=>{
+  const r=document.createElement('div');
+  r.className='lineupRow';
+  r.innerHTML='<div class="order">'+(i+1)+'番</div><input id="p'+i+'" value="'+p+'" placeholder="選手名">';
+  lineup.appendChild(r);
+});
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function go2(){ show('s2'); }
+function go3(){
+  players=players.map((_,i)=>document.getElementById('p'+i).value.trim()||('選手'+(i+1)));
+  document.getElementById('myName').textContent=document.getElementById('myteam').value||'クロチーム';
+  document.getElementById('oppName').textContent=document.getElementById('opp').value||'相手チーム';
+  st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
+  stack=[];
+  document.getElementById('history').innerHTML='<div>プレイボール！</div>';
+  show('s3');
+  render();
+}
+function save(){
+  stack.push(JSON.stringify(st));
+  if(stack.length>50) stack.shift();
+}
+function log(t){
+  const d=document.createElement('div');
+  d.textContent=t;
+  document.getElementById('history').prepend(d);
+}
+function nextBatter(){
+  st.b=0;
+  st.s=0;
+  st.batter=(st.batter+1)%players.length;
+}
+function ball(){
+  save();
+  st.b++;
+  if(st.b>=4){
+    log(players[st.batter]+' 四球');
+    nextBatter();
+  }else{
+    log('ボール');
+  }
+  render();
+}
+function strike(){
+  save();
+  st.s++;
+  if(st.s>=3){
+    log(players[st.batter]+' 三振');
+    doOut();
+  }else{
+    log('ストライク');
+  }
+  render();
+}
+function hit(kind){
+  save();
+  log(players[st.batter]+' '+kind);
+  nextBatter();
+  render();
+}
+function homerun(){
+  save();
+  const name=players[st.batter];
+  if(st.top) st.my++;
+  else st.opp++;
+  log(name+' 本塁打！ +1点');
+  nextBatter();
+  render();
+}
+function run(){
+  save();
+  if(st.top) st.my++;
+  else st.opp++;
+  log('得点！');
+  render();
+}
+function out(){
+  save();
+  log(players[st.batter]+' アウト');
+  doOut();
+  render();
+}
+function doOut(){
+  st.o++;
+  st.b=0;
+  st.s=0;
+  st.batter=(st.batter+1)%players.length;
+  if(st.o>=3){
+    st.o=0;
+    if(st.top){
+      st.top=false;
+    }else{
+      st.top=true;
+      st.inning++;
+    }
+    log('チェンジ！');
+  }
+}
+function undo(){
+  if(!stack.length){
+    log('これ以上戻せません');
+    return;
+  }
+  st=JSON.parse(stack.pop());
+  log('ひとつ戻しました');
+  render();
+}
+function resetGame(){
+  if(!confirm('試合を最初からやり直しますか？')) return;
+  st={inning:1,top:true,my:0,opp:0,b:0,s:0,o:0,batter:0};
+  stack=[];
+  document.getElementById('history').innerHTML='<div>プレイボール！</div>';
+  render();
+}
+function render(){
+  document.getElementById('inning').textContent=st.inning+'回'+(st.top?'表':'裏');
+  document.getElementById('myScore').textContent=st.my;
+  document.getElementById('oppScore').textContent=st.opp;
+  document.getElementById('balls').textContent=st.b;
+  document.getElementById('strikes').textContent=st.s;
+  document.getElementById('outs').textContent=st.o;
+  document.getElementById('batter').textContent=(st.batter+1)+'番　'+players[st.batter];
+}
+</script>
+</body>
+</html>
