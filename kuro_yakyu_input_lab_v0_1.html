@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>クロ野球 新入力方式 v0.1</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#f4f6f8;color:#15202b}
+.app{max-width:430px;margin:auto;min-height:100vh;background:#fff;padding-bottom:18px}
+.top{padding:10px 14px;background:#142d45;color:#fff;display:flex;justify-content:space-between;align-items:center}
+.top b{font-size:17px}.small{font-size:12px;opacity:.85}
+.state{display:grid;grid-template-columns:1fr 1fr 1fr;padding:9px 12px;border-bottom:1px solid #ddd;text-align:center;font-size:13px}
+.state strong{display:block;font-size:18px}
+.fieldWrap{padding:10px 12px 4px}.hint{text-align:center;font-weight:700;font-size:14px;margin:2px 0 7px}
+#field{width:100%;aspect-ratio:1/1;display:block;border-radius:18px;background:#dfeedd;touch-action:none;border:1px solid #cad5c8}
+.controls{padding:8px 12px}.mainBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{min-height:48px;border:0;border-radius:12px;font-size:16px;font-weight:800;background:#e9edf1;color:#17212b}
+button.primary{background:#1769aa;color:#fff} button.ok{background:#16864b;color:#fff;width:100%;margin-top:8px}
+button:disabled{opacity:.38}.status{margin-top:8px;padding:9px 10px;border-radius:10px;background:#f2f5f7;font-size:13px;min-height:39px}
+.judge{display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.judge.show{display:grid}.safe{background:#16864b;color:#fff}.out{background:#c13b34;color:#fff}
+.legend{text-align:center;font-size:11px;color:#65717b;margin-top:5px}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="top"><div><b>⚾ クロ野球 INPUT LAB</b><div class="small">線＋ランナー操作 実験版 v0.1</div></div><div id="batter">打者 1</div></div>
+ <div class="state"><div>アウト<strong id="outs">0</strong></div><div>打席結果<strong id="result">—</strong></div><div>得点<strong id="runs">0</strong></div></div>
+ <div class="fieldWrap">
+   <div class="hint" id="hint">① ホームから打球方向へ線を引いてみて</div>
+   <canvas id="field" width="760" height="760"></canvas>
+   <div class="legend">● ランナーは指で次の塁へ動かせます</div>
+ </div>
+ <div class="controls">
+   <div class="mainBtns">
+     <button id="hit" class="primary">ヒット</button>
+     <button id="clear">線を消す</button>
+   </div>
+   <div class="judge" id="judge"><button class="safe" id="safe">SAFE</button><button class="out" id="out">OUT</button></div>
+   <button id="ok" class="ok" disabled>OK → 次の打者</button>
+   <div class="status" id="status">まず打球方向を線で入力します。</div>
+ </div>
+</div>
+<script>
+const c=document.getElementById('field'),x=c.getContext('2d');
+const status=document.getElementById('status'),hint=document.getElementById('hint');
+const hit=document.getElementById('hit'),ok=document.getElementById('ok'),clear=document.getElementById('clear');
+const judge=document.getElementById('judge'),safe=document.getElementById('safe'),out=document.getElementById('out');
+const outsEl=document.getElementById('outs'),runsEl=document.getElementById('runs'),resultEl=document.getElementById('result'),batterEl=document.getElementById('batter');
+const bases={H:{x:380,y:650},B1:{x:575,y:455},B2:{x:380,y:260},B3:{x:185,y:455}};
+let path=[],drawing=false,runners=[],drag=null,pending=null,batter=1,outs=0,runs=0,playOpen=false;
+function draw(){
+ x.clearRect(0,0,760,760);
+ x.fillStyle='#d9ecd5';x.fillRect(0,0,760,760);
+ x.fillStyle='#c99962';x.beginPath();x.moveTo(380,650);x.lineTo(650,380);x.lineTo(380,110);x.lineTo(110,380);x.closePath();x.fill();
+ x.fillStyle='#8bc47d';x.beginPath();x.arc(380,380,238,Math.PI*.25,Math.PI*.75,true);x.lineTo(380,650);x.closePath();x.fill();
+ x.strokeStyle='rgba(255,255,255,.9)';x.lineWidth=5;x.beginPath();x.moveTo(380,650);x.lineTo(650,380);x.moveTo(380,650);x.lineTo(110,380);x.stroke();
+ x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.moveTo(bases.H.x,bases.H.y);x.lineTo(bases.B1.x,bases.B1.y);x.lineTo(bases.B2.x,bases.B2.y);x.lineTo(bases.B3.x,bases.B3.y);x.closePath();x.stroke();
+ for(const k of ['B1','B2','B3']){let b=bases[k];x.save();x.translate(b.x,b.y);x.rotate(Math.PI/4);x.fillStyle='#fff';x.fillRect(-13,-13,26,26);x.restore()}
+ x.fillStyle='#fff';x.beginPath();x.moveTo(365,640);x.lineTo(395,640);x.lineTo(400,658);x.lineTo(380,671);x.lineTo(360,658);x.closePath();x.fill();
+ if(path.length>1){x.strokeStyle='#e3483f';x.lineWidth=9;x.lineCap='round';x.beginPath();x.moveTo(path[0].x,path[0].y);for(let p of path.slice(1))x.lineTo(p.x,p.y);x.stroke()}
+ runners.forEach(r=>{x.beginPath();x.arc(r.x,r.y,22,0,Math.PI*2);x.fillStyle='#1769aa';x.fill();x.strokeStyle='#fff';x.lineWidth=4;x.stroke();x.fillStyle='#fff';x.font='bold 18px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(r.id,r.x,r.y)});
+}
+function pos(e){let r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*760/r.width,y:(e.clientY-r.top)*760/r.height}}
+function nearRunner(p){return runners.find(r=>Math.hypot(r.x-p.x,r.y-p.y)<40)}
+function nearestBase(p){let best=null,d=1e9;for(const [k,b] of Object.entries(bases)){let q=Math.hypot(b.x-p.x,b.y-p.y);if(q<d){d=q;best=k}}return d<90?best:null}
+c.addEventListener('pointerdown',e=>{let p=pos(e),r=nearRunner(p);c.setPointerCapture(e.pointerId);if(r){drag=r;return} drawing=true;path=[bases.H,p];draw()});
+c.addEventListener('pointermove',e=>{let p=pos(e);if(drag){drag.x=p.x;drag.y=p.y;draw()}else if(drawing){path.push(p);draw()}});
+c.addEventListener('pointerup',e=>{let p=pos(e);if(drag){let b=nearestBase(p);if(b){drag.x=bases[b].x;drag.y=bases[b].y;pending={runner:drag,base:b};judge.classList.add('show');status.textContent='走者の移動：SAFE / OUT を選択';hint.textContent='走者の判定を選んでください';}else{snapRunner(drag)}drag=null;draw();return}drawing=false;if(path.length>2){status.textContent='打球方向を記録しました。次に「ヒット」を押します。';hint.textContent='② ヒットを押す'}draw()});
+function snapRunner(r){let b=bases[r.base];r.x=b.x;r.y=b.y}
+clear.onclick=()=>{path=[];draw();status.textContent='打球線を消しました。';};
+hit.onclick=()=>{if(path.length<2){status.textContent='先にホームから打球方向へ線を引いてください。';return}
+ playOpen=true;let r={id:batter,base:'B1',x:bases.B1.x,y:bases.B1.y};runners.push(r);resultEl.textContent='ヒット';ok.disabled=false;status.textContent='打者走者が一塁へ。二塁打ならランナーを二塁へ動かしてみて。';hint.textContent='③ ランナーを動かす → プレー終了ならOK';draw()};
+safe.onclick=()=>{if(!pending)return;let r=pending.runner,b=pending.base;r.base=b;judge.classList.remove('show');pending=null;
+ if(playOpen && r.id===batter){let map={B1:'単打',B2:'二塁打',B3:'三塁打',H:'本塁打'};resultEl.textContent=map[b]||'ヒット';if(b==='H'){runs++;runsEl.textContent=runs;runners=runners.filter(z=>z!==r)}status.textContent=(map[b]||'進塁')+'として記録。OKで次打者へ。'}
+ else{if(b==='H'){runs++;runsEl.textContent=runs;runners=runners.filter(z=>z!==r);status.textContent='走者生還。+1点';}else status.textContent='盗塁 SAFE：走者は'+({B2:'二塁',B3:'三塁'}[b]||b)+'へ。';}
+ hint.textContent='プレー終了ならOK';draw()};
+out.onclick=()=>{if(!pending)return;let r=pending.runner;runners=runners.filter(z=>z!==r);outs++;outsEl.textContent=outs;judge.classList.remove('show');pending=null;status.textContent='盗塁 OUT：走者を消してアウト+1';hint.textContent='プレー終了ならOK';draw()};
+ok.onclick=()=>{playOpen=false;batter++;batterEl.textContent='打者 '+batter;path=[];resultEl.textContent='—';ok.disabled=true;judge.classList.remove('show');pending=null;status.textContent='次の打者です。塁上走者を次の塁へ動かすと盗塁判定を試せます。';hint.textContent='次打者：打球線 または 塁上ランナーを動かす';draw()};
+draw();
+</script>
+</body></html>
