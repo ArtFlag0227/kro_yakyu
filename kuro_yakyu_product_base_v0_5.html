@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>クロ野球 商品版 土台 v0.2</title>
+<style>
+*{box-sizing:border-box} :root{--navy:#17324a;--blue:#1769aa;--green:#16824b;--red:#c8443c;--bg:#f2f4f6;--line:#d5dce1;--text:#17212b}
+html,body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:var(--text)}
+.app{width:min(100%,760px);margin:auto;background:#fff;min-height:100vh}
+.screen{display:none;padding:14px}.screen.on{display:block}
+.hero{text-align:center;padding:44px 8px 26px}.hero .ball{font-size:58px}.hero h1{margin:4px 0;font-size:34px;color:var(--navy)}.muted{color:#6e7880;font-size:13px}
+button,input,select{font:inherit}.btn{min-height:48px;border:0;border-radius:11px;font-weight:800;font-size:16px}.wide{width:100%}.primary{background:var(--blue);color:#fff}.green{background:var(--green);color:#fff}.light{background:#e9edf0;color:#25323c}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.head h2{margin:0;color:var(--navy);font-size:22px}
+label{display:block;font-size:12px;font-weight:800;margin:9px 0 4px}input,select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:#fff;font-size:16px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nav{margin-top:12px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.tab{min-height:42px;border:1px solid var(--line);background:#fff;border-radius:9px;font-weight:800}.tab.on{background:var(--navy);color:#fff}
+.ph,.pr{display:grid;grid-template-columns:27px minmax(0,1fr) 52px 70px;gap:5px;align-items:center}.ph{font-size:10px;color:#69747c}.pr{margin:5px 0}.pr input,.pr select{min-height:38px;font-size:13px;padding:5px}.ord{text-align:center;font-weight:900}.add{width:100%;min-height:40px;border:1px dashed #9aa4ac;background:#f7f8f9;border-radius:9px;font-weight:800;margin-top:5px}
+.gameTop{display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:5px;text-align:center;margin-bottom:5px}.chip{background:#f1f4f6;border-radius:8px;padding:5px 3px;font-size:10px}.chip b{display:block;font-size:14px;color:var(--navy)}
+.playersInfo{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:5px}.pi{border:1px solid var(--line);border-radius:8px;padding:5px 7px;font-size:10px}.pi b{font-size:13px}
+.field{position:relative;width:100%;aspect-ratio:1.22/1;max-height:52vh;overflow:hidden;border-radius:14px;background:#72b86d;touch-action:none;border:1px solid #b8c8b6}
+.field svg{width:100%;height:100%;display:block}.runner{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--blue);border:3px solid white;box-shadow:0 1px 3px #0004;transform:translate(-50%,-50%);display:none;touch-action:none;cursor:grab;z-index:5}.runner.dragging{cursor:grabbing;opacity:.9}
+.controls{display:flex;justify-content:center;gap:4px;margin-top:5px;flex-wrap:nowrap}.play{width:48px;min-height:34px;padding:2px 4px;border:1px solid var(--line);border-radius:7px;background:#fff;font-weight:900;font-size:13px}.play.active{background:var(--navy);color:#fff}
+.bottomBar{display:grid;grid-template-columns:48px 1fr 56px;gap:5px;margin-top:5px}.icon{min-height:42px;border:0;border-radius:9px;background:#e9edf0;font-size:19px}.ok{background:var(--green);color:#fff;font-weight:900;border:0;border-radius:9px}.undo{border:0;border-radius:9px;background:#e9edf0;font-weight:800}
+.choice{display:none;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:5px}.choice.on{display:grid}.choice button{min-height:40px;border:0;border-radius:8px;background:#e9edf0;font-weight:800}
+.status{text-align:center;font-size:11px;color:#59656e;min-height:18px;padding-top:3px}
+.textPage textarea{width:100%;height:150px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:16px}
+@media(min-width:650px){.game{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(240px,.65fr);gap:10px}.rightPanel{align-self:start}.field{max-height:none}.play{width:52px;min-height:36px}}
+</style>
+</head><body><main class="app">
+<section id="title" class="screen on"><div class="hero"><div class="ball">⚾</div><h1>クロ野球</h1><div class="muted">草野球・少年野球のためのスコアアプリ</div></div><button id="start" class="btn wide green">試合をはじめる</button><p class="muted" style="text-align:center">商品版 土台 v0.2</p></section>
+
+<section id="setup" class="screen"><div class="head"><h2>試合設定</h2><small>1 / 2</small></div>
+<label>日付</label><input id="date" type="date"><label>球場名</label><input id="park" placeholder="球場名">
+<div class="two"><div><label>自チーム</label><input id="myteam" placeholder="自チーム名"></div><div><label>敵チーム</label><input id="oppteam" placeholder="敵チーム名"></div></div>
+<div class="two nav"><button id="backTitle" class="btn light">戻る</button><button id="toPlayers" class="btn primary">選手登録へ</button></div></section>
+
+<section id="players" class="screen"><div class="head"><h2>選手登録</h2><small>2 / 2</small></div>
+<div class="tabs"><button class="tab on" data-side="my">自チーム</button><button class="tab" data-side="opp">敵チーム</button></div>
+<div class="ph"><span>打順</span><span>選手名</span><span>背番</span><span>守備</span></div><div id="plist"></div><button id="add" class="add">＋ 選手追加</button>
+<div class="two nav"><button id="backSetup" class="btn light">試合設定</button><button id="toGame" class="btn green">試合開始</button></div></section>
+
+<section id="game" class="screen"><div class="game">
+<div>
+ <div class="gameTop"><div class="chip">イニング<b>1回 表</b></div><div class="chip">OUT<b id="outs">0</b></div><div class="chip">SCORE<b id="score">0 - 0</b></div></div>
+ <div class="playersInfo"><div class="pi">BATTER<br><b id="batter">1. 選手1</b></div><div class="pi">PITCHER<br><b id="pitcher">相手投手</b></div></div>
+ <div id="field" class="field">
+ <svg id="fieldSvg" viewBox="0 0 800 650" aria-label="クロ野球 基本球場 v1">
+   <defs><pattern id="stripe" width="64" height="64" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="32" height="64" fill="#78bc70"/><rect x="32" width="32" height="64" fill="#6fb267"/></pattern></defs>
+   <rect width="800" height="650" fill="url(#stripe)"/>
+   <path d="M400 605 L95 300 Q400 30 705 300 Z" fill="#b98550"/>
+   <path d="M400 585 L175 360 Q400 150 625 360 Z" fill="#72b86d"/>
+   <path d="M400 585 L610 375 M400 585 L190 375" stroke="white" stroke-width="5"/>
+   <path d="M400 585 L550 435 L400 285 L250 435 Z" fill="none" stroke="white" stroke-width="4"/>
+   <g fill="white">
+    <rect x="539" y="424" width="22" height="22" transform="rotate(45 550 435)"/>
+    <rect x="389" y="274" width="22" height="22" transform="rotate(45 400 285)"/>
+    <rect x="239" y="424" width="22" height="22" transform="rotate(45 250 435)"/>
+    <path d="M386 578 L414 578 L418 591 L400 603 L382 591 Z"/>
+    <rect x="382" y="410" width="36" height="7" rx="3"/>
+   </g>
+   <circle cx="400" cy="413" r="35" fill="#b98550"/>
+   <g id="drawLayer" pointer-events="none"></g>
+ </svg>
+ <div id="r1" class="runner" style="left:68.75%;top:66.9%">1</div><div id="r2" class="runner" style="left:50%;top:43.8%">2</div><div id="r3" class="runner" style="left:31.25%;top:66.9%">3</div>
+ </div>
+</div>
+<div class="rightPanel">
+ <div id="choice" class="choice"></div>
+ <div class="controls"><button class="play" data-p="H">H</button><button class="play" data-p="OUT">OUT</button><button class="play" data-p="K">K</button><button class="play" data-p="B">B</button><button class="play" data-p="HP">HP</button></div>
+ <div class="bottomBar"><button id="undo" class="undo">↶</button><button id="ok" class="ok">OK</button><button id="text" class="icon" title="文字入力">⌨︎</button></div>
+ <div id="status" class="status">球場に打球線を引いて、結果を選択</div>
+</div></div></section>
+
+<section id="textPage" class="screen textPage"><div class="head"><h2>文字入力</h2><small>イレギュラープレー</small></div><textarea placeholder="例：ショートエラー、二塁ランナー三塁へ、打者一塁"></textarea><div class="two nav"><button id="backGame" class="btn light">試合画面へ</button><button class="btn primary" id="textOk">記録候補を作る</button></div><div class="muted" style="margin-top:10px">※この土台では、まだ文章解析は接続していません。</div></section>
+</main>
+<script>
+const $=q=>document.querySelector(q),$$=q=>document.querySelectorAll(q);function show(id){$$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));scrollTo(0,0)}
+let d=new Date();$('#date').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const pos=['投','捕','一','二','三','遊','左','中','右','DH','控'];let side='my',data={my:[],opp:[]};for(let s of ['my','opp'])for(let i=0;i<9;i++)data[s].push({name:'選手'+(i+1),no:'',pos:pos[i]});
+function save(){[...$('#plist').children].forEach((r,i)=>data[side][i]={name:r.querySelector('.nm').value,no:r.querySelector('.no').value,pos:r.querySelector('.po').value})}
+function render(){let l=$('#plist');l.innerHTML='';data[side].forEach((p,i)=>{let r=document.createElement('div');r.className='pr';r.innerHTML='<span class="ord">'+(i+1)+'</span><input class="nm" value="'+p.name+'"><input class="no" inputmode="numeric" placeholder="No."><select class="po">'+pos.map(v=>'<option '+(v===p.pos?'selected':'')+'>'+v+'</option>').join('')+'</select>';l.appendChild(r)})}
+$('#start').onclick=()=>show('setup');$('#backTitle').onclick=()=>show('title');$('#toPlayers').onclick=()=>{render();show('players')};$('#backSetup').onclick=()=>{save();show('setup')};
+$$('.tab').forEach(t=>t.onclick=()=>{save();side=t.dataset.side;$$('.tab').forEach(z=>z.classList.toggle('on',z===t));render()});$('#add').onclick=()=>{save();data[side].push({name:'追加選手',no:'',pos:'控'});render()};
+let batterIndex=0;
+function updateBatter(){
+  const lineup=data.my.length?data.my:[{name:'選手1'}];
+  const p=lineup[batterIndex % lineup.length];
+  $('#batter').textContent=(batterIndex % lineup.length + 1)+'. '+(p?.name||('選手'+(batterIndex+1)));
+}
+$('#toGame').onclick=()=>{save();batterIndex=0;updateBatter();show('game')};
+const choice=$('#choice'),status=$('#status');
+function choices(arr){choice.innerHTML='';arr.forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>{status.textContent=v+' を選択';choice.classList.remove('on')};choice.appendChild(b)});choice.classList.add('on')}
+$$('.play').forEach(b=>b.onclick=()=>{let p=b.dataset.p;if(p==='H'){status.textContent='H：打者ランナーを一塁へ。線とランナー移動で安打内容を判断';$('#r1').style.display='block'}if(p==='OUT')choices(['ゴロ','フライ','ライナー','その他']);if(p==='K')choices(['空振り','見逃し']);if(p==='B')status.textContent='四球：打者を一塁へ';if(p==='HP')status.textContent='死球：打者を一塁へ'});
+$('#text').onclick=()=>show('textPage');$('#backGame').onclick=()=>show('game');$('#textOk').onclick=()=>{$('#textPage textarea').value='';show('game');status.textContent='文字入力は次段階で記録エンジンに接続'};
+const svg=$('#fieldSvg'), drawLayer=$('#drawLayer');
+let drawing=false, currentLine=null, drawnLines=[];
+function svgPoint(ev){
+  const pt=svg.createSVGPoint();
+  pt.x=ev.clientX; pt.y=ev.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+svg.addEventListener('pointerdown',ev=>{
+  ev.preventDefault();
+  drawing=true;
+  svg.setPointerCapture(ev.pointerId);
+  const p=svgPoint(ev);
+  currentLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+  currentLine.setAttribute('x1','400'); currentLine.setAttribute('y1','585');
+  currentLine.setAttribute('x2',p.x); currentLine.setAttribute('y2',p.y);
+  currentLine.setAttribute('stroke','#17212b');
+  currentLine.setAttribute('stroke-width','7');
+  currentLine.setAttribute('stroke-linecap','round');
+  currentLine.setAttribute('opacity','.9');
+  drawLayer.appendChild(currentLine);
+});
+svg.addEventListener('pointermove',ev=>{
+  if(!drawing||!currentLine)return;
+  ev.preventDefault();
+  const p=svgPoint(ev);
+  currentLine.setAttribute('x2',Math.max(0,Math.min(800,p.x)));
+  currentLine.setAttribute('y2',Math.max(0,Math.min(650,p.y)));
+});
+function finishLine(ev){
+  if(!drawing)return;
+  drawing=false;
+  if(currentLine){
+    drawnLines.push(currentLine);
+    currentLine=null;
+    status.textContent='打球線を記録。結果ボタンを選択';
+  }
+}
+svg.addEventListener('pointerup',finishLine);
+svg.addEventListener('pointercancel',finishLine);
+
+$('#undo').onclick=()=>{
+  choice.classList.remove('on');
+  const last=drawnLines.pop();
+  if(last){last.remove();status.textContent='打球線を1本戻しました'}
+  else status.textContent='戻す対象はありません';
+};
+
+// ランナー操作：まずは一塁→二塁だけ。
+// ドロップ後に選択肢を出し、確定するまで勝手に記録しない。
+const r1=$('#r1'), r2=$('#r2');
+let runnerDrag=null;
+function fieldPercent(ev){
+  const rect=$('#field').getBoundingClientRect();
+  return {
+    x: Math.max(0,Math.min(100,(ev.clientX-rect.left)/rect.width*100)),
+    y: Math.max(0,Math.min(100,(ev.clientY-rect.top)/rect.height*100))
+  };
+}
+r1.addEventListener('pointerdown',ev=>{
+  if(r1.style.display==='none') return;
+  ev.preventDefault();
+  r1.setPointerCapture(ev.pointerId);
+  runnerDrag={startLeft:r1.style.left,startTop:r1.style.top};
+  r1.classList.add('dragging');
+});
+r1.addEventListener('pointermove',ev=>{
+  if(!runnerDrag)return;
+  ev.preventDefault();
+  const p=fieldPercent(ev);
+  r1.style.left=p.x+'%';
+  r1.style.top=p.y+'%';
+});
+function finishRunnerDrag(ev){
+  if(!runnerDrag)return;
+  r1.classList.remove('dragging');
+
+  // 二塁の近くへ落としたか判定
+  const p=fieldPercent(ev);
+  const nearSecond=Math.hypot(p.x-50,p.y-43.8)<13;
+
+  if(!nearSecond){
+    r1.style.left=runnerDrag.startLeft;
+    r1.style.top=runnerDrag.startTop;
+    status.textContent='一塁走者：二塁へドラッグしてみてください';
+    runnerDrag=null;
+    return;
+  }
+
+  // 見た目だけ一旦二塁へ。選択肢で確定。
+  r1.style.left='50%';
+  r1.style.top='43.8%';
+  choice.innerHTML='';
+
+  [
+    ['進塁 SAFE',()=>{
+      r1.style.display='none';
+      r2.style.display='block';
+      status.textContent='一塁走者：進塁で二塁 SAFE';
+    }],
+    ['盗塁 SAFE',()=>{
+      r1.style.display='none';
+      r2.style.display='block';
+      status.textContent='一塁走者：盗塁成功';
+    }],
+    ['OUT',()=>{
+      r1.style.display='none';
+      status.textContent='一塁走者：二塁で OUT';
+    }]
+  ].forEach(([label,fn])=>{
+    const b=document.createElement('button');
+    b.textContent=label;
+    b.onclick=()=>{
+      fn();
+      choice.classList.remove('on');
+      choice.innerHTML='';
+    };
+    choice.appendChild(b);
+  });
+
+  choice.classList.add('on');
+  status.textContent='一塁→二塁：結果を選択';
+  runnerDrag=null;
+}
+r1.addEventListener('pointerup',finishRunnerDrag);
+r1.addEventListener('pointercancel',ev=>{
+  if(!runnerDrag)return;
+  r1.style.left=runnerDrag.startLeft;
+  r1.style.top=runnerDrag.startTop;
+  r1.classList.remove('dragging');
+  runnerDrag=null;
+});
+
+$('#ok').onclick=()=>{
+  // 1プレー終了。走者は残し、打球線だけ消して次打者へ。
+  choice.classList.remove('on');
+  drawLayer.innerHTML='';
+  drawnLines=[];
+  currentLine=null;
+  drawing=false;
+  batterIndex++;
+  updateBatter();
+  status.textContent='次の打者へ。走者はそのまま残っています';
+};
+
+render();
+</script></body></html>
