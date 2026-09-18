@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>クロ野球 v3.3.128 タッチアップUI修正版</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d100e}
+#app{display:block;width:100%;height:100dvh;border:0;background:#0d100e}
+html.runner-drag-lock,body.runner-drag-lock{overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important}
+body.runner-drag-lock #app{touch-action:none!important}
+</style>
+</head>
+<body>
+<iframe id="app" src="kuro_yakyu_v3_3_128_core.html" allow="fullscreen"></iframe>
+<script>
+(()=>{
+  const frame=document.getElementById('app');
+
+  const FIELD_FIRST_CSS = `
+  /* v3.3.125: グラウンドを主役にする。周辺UIを極限まで圧縮 */
+  @media(max-width:649px){
+    #game.screen.on{
+      padding:env(safe-area-inset-top) 4px max(2px,env(safe-area-inset-bottom))!important;
+    }
+
+    #game .game{gap:0!important}
+    #game .game>div:first-child{min-height:0!important}
+
+    /* 上部情報を薄く */
+    #game .gameTop{gap:3px!important;margin-bottom:1px!important}
+    #game .gameTop .chip{
+      padding:2px 1px!important;
+      font-size:8px!important;
+      line-height:1.05!important
+    }
+    #game .gameTop .chip b{
+      font-size:11px!important;
+      line-height:1.05!important
+    }
+    #game .attackTeamName{
+      min-height:18px!important;
+      padding:1px 5px!important;
+      font-size:9px!important;
+      line-height:1.1!important
+    }
+    #game #gameFinishBtn{
+      min-height:20px!important;
+      padding:1px 5px!important;
+      font-size:9px!important
+    }
+
+    #game .playersInfo{gap:3px!important;margin-bottom:1px!important}
+    #game .pi{
+      padding:2px 4px!important;
+      font-size:8px!important;
+      line-height:1.05!important
+    }
+    #game .pi b{
+      font-size:10px!important;
+      line-height:1.05!important
+    }
+
+    #game .batterStatsCard{
+      margin:1px 0 2px!important;
+      padding:2px 5px!important
+    }
+    #game .batterStatsMain{
+      gap:4px!important;
+      font-size:8px!important;
+      line-height:1.05!important
+    }
+    #game .batterStatsMain .bigStat{font-size:10px!important}
+    #game .batterStatsToday{display:none!important}
+
+    /* 余った高さは全部グラウンドへ */
+    #game #field{
+      flex:1 1 auto!important;
+      min-height:0!important;
+      height:auto!important;
+      max-height:none!important;
+      aspect-ratio:auto!important;
+      margin-top:0!important;
+      border-radius:8px!important
+    }
+
+    /* 球場内の補助ボタンも小型化 */
+    #game #gameScoreboardBtn{
+      left:4px!important;
+      bottom:4px!important;
+      min-height:25px!important;
+      padding:2px 5px!important;
+      font-size:9px!important
+    }
+    #game #editMembers{
+      right:4px!important;
+      bottom:4px!important;
+      min-height:25px!important;
+      padding:2px 5px!important;
+      font-size:9px!important
+    }
+    #game #gameRecordCenter{
+      right:4px!important;
+      top:4px!important;
+      min-height:25px!important;
+      padding:2px 5px!important;
+      font-size:9px!important
+    }
+
+    /* 野手は見た目は小さく、タップ判定は大きく */
+    #game .fielderLayer{z-index:82!important}
+    #game .fielderDot{
+      width:46px!important;
+      height:46px!important;
+      z-index:83!important
+    }
+    #game .fielderDot::before{inset:8px!important}
+
+    /* 捕手は可能な限り下へ */
+    #game .fielderDot[data-pos="捕"]{
+      top:calc(100% - 18px)!important;
+      width:42px!important;
+      height:42px!important;
+      z-index:84!important
+    }
+    #game .fielderDot[data-pos="捕"]::before{inset:7px!important}
+
+    /* v125の野手タップ領域を維持 */
+    #game .runner,#game .pendingBatter{z-index:70!important}
+    #game .runnerChoice{z-index:120!important}
+
+    /* 下部操作欄を徹底的に圧縮 */
+    #game .rightPanel{
+      flex:0 0 auto!important;
+      margin-top:2px!important;
+      padding:3px 4px 2px!important;
+      border-radius:8px!important
+    }
+    #game .playPanelHeading{
+      min-height:18px!important;
+      gap:3px!important
+    }
+    #game .playPanelHeading .morePlayActions,
+    #game #playStageBack{
+      min-height:19px!important;
+      padding:1px 5px!important;
+      font-size:9px!important;
+      line-height:1!important
+    }
+
+    #game .playStageArea{
+      min-height:55px!important;
+      max-height:55px!important
+    }
+    #game .playStageArea .controls,
+    #game .controls{
+      gap:2px!important;
+      margin:2px 0 0!important
+    }
+    #game .playStageArea .play,
+    #game .controls .play{
+      min-height:25px!important;
+      padding:0 1px!important;
+      border-radius:5px!important;
+      font-size:10px!important;
+      line-height:1!important
+    }
+
+    #game #choice.on:not(.warningModal){
+      max-height:55px!important;
+      gap:2px!important;
+      margin-top:2px!important;
+      padding:2px!important
+    }
+    #game #choice.on:not(.warningModal) button{
+      min-height:24px!important;
+      padding:1px!important;
+      font-size:10px!important;
+      line-height:1!important
+    }
+
+    #game .buntActionRow{
+      gap:2px!important;
+      margin-top:2px!important
+    }
+    #game .buntActionRow button{
+      min-height:24px!important;
+      padding:1px 2px!important;
+      font-size:9px!important
+    }
+
+    #game .playSelectionSummary{
+      min-height:20px!important;
+      margin-top:2px!important;
+      padding:2px 5px!important;
+      font-size:9px!important;
+      line-height:1.15!important
+    }
+
+    #game .bottomBar{
+      grid-template-columns:54px 1fr 40px!important;
+      gap:3px!important;
+      margin-top:2px!important
+    }
+    #game .bottomBar button,
+    #game #ok{
+      min-height:29px!important;
+      border-radius:6px!important
+    }
+    #game #undo{
+      font-size:9px!important;
+      padding:1px 2px!important
+    }
+    #game #ok{font-size:16px!important}
+    #game #text{
+      font-size:13px!important;
+      padding:1px!important
+    }
+
+    #game .status{
+      min-height:12px!important;
+      max-height:14px!important;
+      margin-top:1px!important;
+      padding:1px 2px!important;
+      font-size:8px!important;
+      line-height:1.1!important
+    }
+
+    #game #foulFlyOutBtn{
+      min-height:27px!important;
+      margin-top:2px!important;
+      font-size:10px!important
+    }
+  }
+  /* v126: ランナーの48pxタッチ領域を野手より前面へ。丸の見た目はv124の21pxのまま。 */
+  #game .runner{z-index:140!important;pointer-events:auto!important;touch-action:none!important}
+  #game .pendingBatter{z-index:140!important}
+  #game .runnerChoice{z-index:160!important}
+  html.runner-drag-lock,body.runner-drag-lock{overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important}
+  body.runner-drag-lock #game,body.runner-drag-lock #field{overscroll-behavior:none!important;touch-action:none!important}
+  `;
+
+  function installRunnerGestureLock(doc){
+    if(doc.__kuroRunnerGestureLockInstalled)return;
+    doc.__kuroRunnerGestureLockInstalled=true;
+    const childWindow=doc.defaultView;
+    let activePointer=null,releaseLock=null;
+    const blockMove=e=>{if(activePointer!==null&&e.cancelable)e.preventDefault();};
+    const unlock=()=>{
+      if(activePointer===null)return;
+      activePointer=null;
+      childWindow.removeEventListener('touchmove',blockMove,true);
+      childWindow.removeEventListener('pointermove',blockMove,true);
+      window.removeEventListener('touchmove',blockMove,true);
+      window.removeEventListener('pointermove',blockMove,true);
+      doc.documentElement.classList.remove('runner-drag-lock');
+      doc.body.classList.remove('runner-drag-lock');
+      document.documentElement.classList.remove('runner-drag-lock');
+      document.body.classList.remove('runner-drag-lock');
+      frame.classList.remove('runner-drag-lock');
+      releaseLock?.();releaseLock=null;
+    };
+    const begin=e=>{
+      if(activePointer!==null || e.pointerType==='mouse'&&e.button!==0)return;
+      activePointer=e.pointerId;
+      const scrollY=childWindow.scrollY||doc.documentElement.scrollTop||0;
+      const body=doc.body;
+      const before={position:body.style.position,top:body.style.top,left:body.style.left,
+        right:body.style.right,width:body.style.width,overflow:body.style.overflow};
+      doc.documentElement.classList.add('runner-drag-lock');
+      body.classList.add('runner-drag-lock');
+      document.documentElement.classList.add('runner-drag-lock');
+      document.body.classList.add('runner-drag-lock');
+      frame.classList.add('runner-drag-lock');
+      body.style.position='fixed';body.style.top=(-scrollY)+'px';body.style.left='0';
+      body.style.right='0';body.style.width='100%';body.style.overflow='hidden';
+      releaseLock=()=>{
+        Object.assign(body.style,before);
+        try{childWindow.scrollTo(0,scrollY)}catch(_e){}
+      };
+      childWindow.addEventListener('touchmove',blockMove,{capture:true,passive:false});
+      childWindow.addEventListener('pointermove',blockMove,{capture:true,passive:false});
+      window.addEventListener('touchmove',blockMove,{capture:true,passive:false});
+      window.addEventListener('pointermove',blockMove,{capture:true,passive:false});
+    };
+    const scheduleUnlock=()=>{const ending=activePointer;if(ending!==null)setTimeout(()=>{if(activePointer===ending)unlock()},0)};
+    const end=e=>{if(activePointer===null||e.pointerId!=null&&e.pointerId!==activePointer)return;scheduleUnlock();};
+    doc.querySelectorAll('#game .runner').forEach(runner=>runner.addEventListener('pointerdown',begin,{capture:true,passive:false}));
+    childWindow.addEventListener('pointerup',end,{capture:true});
+    childWindow.addEventListener('pointercancel',end,{capture:true});
+    childWindow.addEventListener('lostpointercapture',end,{capture:true});
+    childWindow.addEventListener('touchend',scheduleUnlock,{capture:true});
+    childWindow.addEventListener('touchcancel',scheduleUnlock,{capture:true});
+    childWindow.addEventListener('blur',unlock);
+    childWindow.addEventListener('pagehide',unlock);
+  }
+
+  function applyFieldFirst(){
+    try{
+      const doc=frame.contentDocument;
+      if(!doc) return;
+      const old=doc.getElementById('kuro-v33125-max-touch-field');
+      if(old) old.remove();
+      const style=doc.createElement('style');
+      style.id='kuro-v33125-max-touch-field';
+      style.textContent=FIELD_FIRST_CSS;
+      doc.head.appendChild(style);
+      installRunnerGestureLock(doc);
+      doc.title='クロ野球 v3.3.126 ランナードラッグ修正版';
+    }catch(e){
+      console.error('v125 style injection failed',e);
+    }
+  }
+
+  frame.addEventListener('load',()=>{
+    applyFieldFirst();
+    setTimeout(applyFieldFirst,80);
+    setTimeout(applyFieldFirst,300);
+  });
+})();
+</script>
+</body>
+</html>
