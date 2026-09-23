@@ -392,7 +392,7 @@ body.member-drag-lock #players{touch-action:pan-y!important;overscroll-behavior-
 #game .runner.dragging{z-index:181!important}
 #game .playStageArea .controls .play[data-p="OUT"].out-selected{background:#777!important;border-color:#aaa!important;color:#fff!important}
 /* v3.3.135: 送りバント選択のみ。既存グラウンドの寸法・位置に影響しない。 */
-#game .runnerChoice.sacBuntDraft.on{display:flex!important;flex-direction:column;gap:8px;left:50%!important;top:auto!important;bottom:6px!important;transform:translateX(-50%)!important;width:calc(100% - 24px);max-width:350px;max-height:calc(100% - 16px);box-sizing:border-box;overflow-y:auto;white-space:normal;padding:12px;border:2px solid #ffe369!important;border-radius:12px;color:#fff;text-align:center}
+#game .runnerChoice.sacBuntDraft.on{display:flex!important;flex-direction:column;gap:8px;left:50%!important;top:8px!important;bottom:auto!important;transform:translateX(-50%)!important;width:calc(100% - 24px);max-width:350px;max-height:calc(100% - 16px);box-sizing:border-box;overflow-y:auto;white-space:normal;padding:12px;border:2px solid #ffe369!important;border-radius:12px;color:#fff;text-align:center}
 #game .runnerChoice.sacBuntDraft::after{display:none}
 #game .sacBuntDraft .sacBuntTitle{font-size:16px;font-weight:900;color:#ffe369}
 #game .sacBuntDraft .sacBuntTarget{font-size:21px;font-weight:900;line-height:1.35;overflow-wrap:anywhere;margin:0}
@@ -3464,6 +3464,7 @@ function closeSacBuntDecision(){
   [...runners,pendingBatter].forEach(el=>el.classList.remove('sacBuntTargetRunner'));
   runnerChoice.classList.remove('sacBuntDraft','buntDecision');
   runnerChoice.removeAttribute('aria-label');
+  runnerChoice.removeAttribute('role');
   hideRunnerChoice();
 }
 function renderSacBuntDecision(){
