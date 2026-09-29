@@ -1453,7 +1453,7 @@ function save(){
   [...$('#plist').querySelectorAll('.memberrow')].forEach(r=>{
     const i=data[side].findIndex(p=>p.playerId===r.dataset.playerId);
     if(i<0)return;
-    const p=data[side][i], editable=side!=='my'||rosterManageOnly;
+    const p=data[side][i], editable=!editingLiveGame&&(side!=='my'||rosterManageOnly);
     let name=editable?r.querySelector('.nm').value.trim():p.name;
     if(side==='my'&&name!==p.name&&p.name&&!confirm('この変更は同じ選手の名前修正です。過去の記録も同じplayerIdとして扱われます。別の選手は新規登録してください。')){name=p.name;r.querySelector('.nm').value=name;}
     data[side][i]={...p,name,no:editable?r.querySelector('.no').value.trim():p.no,...(rosterManageOnly?{}:{pos:r.querySelector('.po').value})};
@@ -1538,8 +1538,13 @@ function closePositionPicker152(){
  $$('#plist .position-editing').forEach(r=>r.classList.remove('position-editing'));
  $$('#plist .position-button').forEach(b=>b.setAttribute('aria-expanded','false'));
 }
-function setTodayPosition152(playerId,targetPos){
+function setTodayPosition152(playerId,targetPos,draft173=false){
  if(rosterManageOnly||!pos.slice(0,10).includes(targetPos))return false;
+ if(editingLiveGame&&!draft173){
+   const player=data[side].slice(0,activeCount(side)).find(p=>p.playerId===playerId);
+   if(!player||player.pos===targetPos){closePositionPicker152();return false;}
+   return commitLiveMemberMutation173(()=>setTodayPosition152(playerId,targetPos,true),'member-position');
+ }
  const starters=data[side].slice(0,activeCount(side)),source=starters.find(p=>p.playerId===playerId);
  if(!source||source.pos===targetPos){closePositionPicker152();return false;}
  save();
@@ -1607,12 +1612,15 @@ function lockMemberDragScroll(){
 }
 // One gesture lifecycle; only the drop transaction differs between lineup and defense.
 let cancelMemberGesture149=null;
+function withdrawnMember173(team,id){
+ return (gameLineups.memberChanges||[]).some(e=>(e.substitutions||[]).some(x=>x.team===team&&x.before?.playerId===id&&x.after?.playerId!==id));
+}
 function validMemberDrop149(a,b){
  const rows=data[side],n=activeCount(side);
  if(a===b||!rows[a]||!rows[b])return false;
  if(!editingLiveGame)return true;
  if(a>=n&&b>=n)return false;
- if((a<n)!==(b<n))return true;
+ if((a<n)!==(b<n))return !withdrawnMember173(side,rows[a<n?b:a].playerId);
  return pos.slice(0,9).includes(rows[a].pos)&&pos.slice(0,9).includes(rows[b].pos)&&rows[a].pos!==rows[b].pos;
 }
 function commitMemberDrop149(a,b){
@@ -1635,14 +1643,20 @@ function commitMemberDrop149(a,b){
    // Pregame composition only: no live transaction, appearance or member-change event.
    persistRoster();render();return true;
  }
- const action=startUndoAction('member-drag');if(!action)return false;
- const before=action.before,team=side,n=activeCount(side);
- try{
-   // Keep identity-based eligibility for non-DH modes; the shared resolver excludes the DH pitcher.
-   data.orderRules ||= {};
-   data.orderRules[side]={...buildOrderRules(side,data[side].slice(0,n)),battingEligibilityIds:battingPlayers(gameLineups,side).map(p=>p.playerId)};
+ return commitLiveMemberMutation173(()=>{
+   const n=activeCount(side);
    if((a<n)!==(b<n))substitutePlayer(a<n?a:b,a<n?b:a);
    else moveDefensePosition(a,data[side][b].pos);
+ },'member-drag');
+}
+// Both existing gesture and position picker share one live transaction.
+function commitLiveMemberMutation173(mutate,kind){
+ const action=startUndoAction(kind);if(!action)return false;
+ const before=action.before,team=side,n=activeCount(side);
+ try{
+   data.orderRules ||= {};
+   data.orderRules[side]={...buildOrderRules(side,data[side].slice(0,n)),battingEligibilityIds:battingPlayers(gameLineups,side).map(p=>p.playerId)};
+   mutate();
    if(!commitLiveMemberEdit())throw Error('member save failed');
    beginLiveMemberEdit();side=team;render();
    finishUndoAction(action);saveActiveGameState();return true;
@@ -1650,6 +1664,7 @@ function commitMemberDrop149(a,b){
    undoAction=null;restorePlayState(before);saveActiveGameState();return false;
  }
 }
+
 function attachMemberDrag149(row,index){
  const handle=row.querySelector('.handle'),list=$('#plist');
  let pid=null,touchId=null,x=0,y=0,lastX=0,lastY=0,active=false,release=null,raf=0,oldMaxHeight='';
@@ -1737,9 +1752,9 @@ function render(){
   cancelMemberGesture149?.();
   renderingMembers=true;
   try{
-  const heading=$('#players .ph'),pregameHeading=!rosterManageOnly&&!editingLiveGame;
+  const heading=$('#players .ph'),pregameHeading=!rosterManageOnly;
   heading.classList.toggle('pregame-heading154',pregameHeading);
-  heading.innerHTML=(rosterManageOnly?['選手名','背番']:pregameHeading?['打順','背番','選手名','移動','守備']:['打順','選手名','背番','移動','守備']).map(t=>'<span>'+t+'</span>').join('');
+  heading.innerHTML=(rosterManageOnly?['選手名','背番']:pregameHeading?['打順','背番','選手名','移動','守備']:['打順','選手名','背番','守備']).map(t=>'<span>'+t+'</span>').join('');
   const l=$('#plist');l.innerHTML='';const count=activeCount(side);
   const order=buildOrderRules(side,data[side].slice(0,count)).battingPlayerIds;
   const currentBatterId=editingLiveGame&&side===offenseSide?batterPlayer()?.playerId:null;
@@ -1750,7 +1765,7 @@ function render(){
     if(currentBatterId&&p.playerId===currentBatterId){r.classList.add('current-batter');if(i>=count)r.classList.add('original-batter');}
     r.innerHTML='<span class="handle">☰</span><input class="nm" value="'+esc(p.name)+'" placeholder="選手名"><input class="no" inputmode="numeric" value="'+esc(p.no)+'" placeholder="No."><select class="po">'+pos.map(v=>'<option '+(v===p.pos?'selected':'')+'>'+v+'</option>').join('')+'</select>';
     r.dataset.playerId=p.playerId;
-    if(side==='my'&&!rosterManageOnly)r.querySelectorAll('.nm,.no').forEach(el=>{el.readOnly=true;el.title='名前・背番号は自チーム名簿で変更します';});
+    if((side==='my'||editingLiveGame)&&!rosterManageOnly)r.querySelectorAll('.nm,.no').forEach(el=>{el.readOnly=true;el.title='名前・背番号は自チーム名簿で変更します';});
     if(rosterManageOnly)r.querySelector('.po').remove();
     else r.querySelector('.po').disabled=editingLiveGame;
     if(!rosterManageOnly&&i<count){
@@ -1762,7 +1777,7 @@ function render(){
     const battingOrder=order.indexOf(p.playerId)+1;
     if(!rosterManageOnly){r.dataset.battingOrder=battingOrder||'';r.querySelector('.handle').textContent=battingOrder||'－';r.querySelector('.handle').title=battingOrder?battingOrder+'番':'打順外';}
     let grip=r.querySelector('.handle');
-    const pregame=!rosterManageOnly&&!editingLiveGame;
+    const pregame=!rosterManageOnly;
     if(pregame){
       r.classList.add('pregame-move154');
       const move=document.createElement('button');move.type='button';move.className='handle';grip.replaceWith(move);grip=move;
@@ -1771,11 +1786,12 @@ function render(){
       r.prepend(slot,r.querySelector('.no'),r.querySelector('.nm'));grip.before(r.querySelector('.nm'));
       r.querySelector('.nm').title=p.name||'選手名';
     }
-    grip.textContent='↕ 移動';
+    grip.textContent=pregame?'↕ 移動':'≡';
     grip.setAttribute('role','button');grip.setAttribute('aria-label',(battingOrder?battingOrder+'番 ':'控え ')+(p.name||'選手')+'を掴んで移動');grip.setAttribute('aria-grabbed','false');
     if(rosterManageOnly){
       const retire=document.createElement('button');retire.type='button';retire.textContent='退団・引退';retire.onclick=()=>setPlayerStatus158(p.playerId,'inactive');grip.remove();retire.className='retire158';r.appendChild(retire);
-    }else attachMemberDrag149(r,i);
+    }else if(editingLiveGame&&i>=count&&withdrawnMember173(side,p.playerId)){grip.textContent='交代済';grip.disabled=true;grip.setAttribute('aria-label',(p.name||'選手')+' 交代済み');}
+    else attachMemberDrag149(r,i);
     l.appendChild(r);
   });
   if(count===data[side].length&&!rosterManageOnly){const line=document.createElement('div');line.className='joinline';line.innerHTML='<b>本日参加ライン ▲ 上が参加中</b><button type="button" class="lineGrip" aria-label="参加ラインを上下に移動">↕</button>';l.appendChild(line);attachLineDrag(line);}
@@ -1788,12 +1804,13 @@ function render(){
   $('#toGame').style.display=rosterManageOnly?'none':'';
   $('#backSetup').textContent=editingLiveGame?'試合へ戻る':(rosterManageOnly?'スタート画面に戻る':'設定に戻る');
   $('#toGame').textContent=editingLiveGame?'変更を反映して試合へ戻る':'試合開始';
-  if(editingLiveGame)$('#memberSummary').textContent+='。既存の［↕ 移動］と守備位置タップで交代・守備交換を行い、反映後に保存します。';
+  if(editingLiveGame)$('#memberSummary').textContent+='。移動を離した時、または守備位置を選んだ時に保存します。';
   let help=$('#memberDragHelp');if(!help){help=document.createElement('div');help.id='memberDragHelp';$('#plist').before(help);}
-  help.textContent=rosterManageOnly?'名前・背番号の修正は同じ選手の情報変更です。新人は「選手追加」で登録してください。守備位置はスタメン画面で決めます。':editingLiveGame?'［↕ 移動］だけを操作して出場中と控えを交代。守備位置をタップすると既存の自動交換を行います。選手名は移動操作の対象になりません。':'↕ 移動を掴んで打順変更・控えと交換。右端の守備位置をタップすると、今日の守備を入れ替えます。';
+  help.textContent=rosterManageOnly?'名前・背番号の修正は同じ選手の情報変更です。新人は「選手追加」で登録してください。守備位置はスタメン画面で決めます。':editingLiveGame?'↕ 移動で出場中と控えを交代。守備位置タップで自動交換。出場中同士の移動は守備交換になり、打順は変わりません。':'↕ 移動を掴んで打順変更・控えと交換。右端の守備位置をタップすると、今日の守備を入れ替えます。';
   }finally{renderingMembers=false;}
 }
 function attachLineDrag(line){
+  if(editingLiveGame){line.querySelector('.lineGrip')?.remove();return;}
   const grip=line.querySelector('.lineGrip');
   if(!grip)return;
   let active=false,pid=null,pendingN=activeCount(side),releaseScroll=null;
@@ -1914,6 +1931,7 @@ function beginLiveMemberEdit(){
 function substitutePlayer(slot,bench){
   const count=activeCount(side);
   if(!liveRosterEdit||slot<0||slot>=count||bench<count||!data[side][bench])return;
+  if(withdrawnMember173(side,data[side][bench].playerId))return false;
   const outgoing=cloneObj(data[side][slot]),incoming=cloneObj(data[side][bench]);
   data[side][slot]={...incoming,pos:outgoing.pos};
   data[side][bench]={...outgoing,pos:'控'};
@@ -1948,12 +1966,15 @@ function validateMemberLineups(){
   return '';
 }
 function commitLiveMemberEdit(){
+  cancelMemberGesture149?.();closePositionPicker152();
   if(!assignRosterIds())return false;
   if(!liveRosterEdit)return false;
   save();
   const error=validateMemberLineups();if(error){alert(error);return false;}
   const before=liveRosterEdit.lineups;
   const next={my:cloneObj(data.my.slice(0,activeCount('my'))),opp:cloneObj(data.opp.slice(0,activeCount('opp')))};
+  const memberTeams173=teamIds166({...JSON.parse(localStorage.getItem(GAME_KEY)||'{}'),id:activeGameSessionId});
+  for(const team of ['my','opp'])next[team]=next[team].map(p=>({...p,teamId:memberTeams173[team],teamSide:team}));
   next.orderRules=Object.fromEntries(['my','opp'].map(t=>[t,buildOrderRules(t,next[t])]));
   const replacementId=(team,id)=>{
     for(const op of liveRosterEdit.substitutions)if(op.team===team&&op.before.playerId===id)id=op.after.playerId;
@@ -2010,6 +2031,8 @@ function commitLiveMemberEdit(){
     const active={version:2,gameId:meta.id,status:'in_progress',finished:false,savedAt:now,active:true,inning:inning.inning,half:inning.half,playState:state,gameLineups:next,
       playEvents:cloneObj(window.kuroPlayEvents||[]),textEvents:cloneObj(window.kuroTextPlayEvents||[]),textConfirmPending:!!textConfirmPending};
     const values=[data,meta,active,pitching].map(x=>JSON.stringify(x));
+    // Live composition lives in the game snapshot; keep the saved player master intact.
+    values[0]=previousValues[0]??JSON.stringify(liveRosterEdit.roster);
     keys.forEach((k,i)=>localStorage.setItem(k,values[i]));
   }catch(e){
     if(previousValues)keys.forEach((k,i)=>{try{if(previousValues[i]==null)localStorage.removeItem(k);else localStorage.setItem(k,previousValues[i]);}catch(_){}});
@@ -2635,7 +2658,7 @@ function restorePlayState(st){
       data.orderRules=data.orderRules||{};if(masterNow158.orderRules?.my)data.orderRules.my=masterNow158.orderRules.my;else delete data.orderRules.my;
       data.masterRevision=masterNow158.masterRevision;
     }
-    data.issuedPlayerIds=[...new Set([...(data.issuedPlayerIds||[]),...(masterNow158.issuedPlayerIds||[])])];persistRoster();}
+    data.issuedPlayerIds=[...new Set([...(data.issuedPlayerIds||[]),...(masterNow158.issuedPlayerIds||[])])];if(!hasLiveGameSession())persistRoster();}
   if(st.pitchingState){window.kuroPitchingAppearances=cloneObj(st.pitchingState);localStorage.setItem('kuroYakyuPitchingV1',JSON.stringify(st.pitchingState));}
   batterIndex=st.batterIndex;
   offenseSide=st.offenseSide||offenseSide;
