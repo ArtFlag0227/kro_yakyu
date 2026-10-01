@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ja">
 <head>
+<meta name="kuro-ui-revision" content="177.1-foul-ui2">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>クロ野球 v3.3.177.1 選手マスター</title>
@@ -1309,10 +1310,10 @@ body.member-screen:not(.member-gesture-lock){overflow-y:visible!important;oversc
 <style>
 #game .foulOutTarget1771{position:absolute;top:73%;transform:translate(-50%,-50%);width:34px;height:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:2px dashed #a3e5bb;border-radius:50%;background:#145631;color:#fff;font-size:11px;font-weight:800;z-index:110;pointer-events:none;user-select:none}
 #choice .foulOutPrompt1771{grid-column:1/-1;width:100%;font-weight:800;text-align:center}
-#game #choice.on:not(.warningModal):has(.foulOutPrompt1771){position:absolute!important;inset:0 0 auto!important;margin:0!important;height:auto!important;max-height:none!important;z-index:600;padding:8px!important;box-shadow:0 4px 12px #0006!important}
-#game #choice.on:has(.foulOutPrompt1771) button{min-height:36px!important}
-#game .rightPanel:has(.foulOutPrompt1771){position:relative}
-#game .rightPanel:has(#choice.on .foulOutPrompt1771),#game .playStageArea:has(#choice.on .foulOutPrompt1771){overflow:visible!important}
+#game #choice.on:not(.warningModal).foul-catcher1771{position:absolute!important;inset:0 0 auto!important;margin:0!important;height:auto!important;max-height:none!important;z-index:600;padding:8px!important;box-shadow:0 4px 12px #0006!important}
+#game #choice.on.foul-catcher1771 button{min-height:36px!important}
+#game .rightPanel:has(#choice.foul-catcher1771){position:relative}
+#game .rightPanel:has(#choice.on.foul-catcher1771),#game .playStageArea:has(#choice.on.foul-catcher1771){overflow:visible!important}
 </style>
 </head><body>
 <dialog id="recordsResetDialog163" aria-labelledby="recordsResetMessage163" style="box-sizing:border-box;width:calc(100% - 32px);max-width:420px;border:2px solid #a61919;border-radius:12px;padding:20px">
@@ -4105,6 +4106,7 @@ function chooseFoulCatcher1771(){
     document.getElementById('foulFlyOutBtn').onclick();
     handleOkAction();
   }]));
+  choice.classList.add('foul-catcher1771');
   const prompt=document.createElement('div');prompt.className='foulOutPrompt1771';
   prompt.textContent='誰が捕球しましたか？';choice.prepend(prompt);
   for(const b of choice.querySelectorAll('button')){
@@ -4388,6 +4390,7 @@ function startDroppedThirdStrikePending(){
 }
 
 function choices(arr){
+ choice.classList.remove('foul-catcher1771');
  choice.innerHTML='';arr.forEach(([label,fn])=>{let b=document.createElement('button');b.textContent=label;
     if(label==='空振り') b.classList.add('k-swing');
     if(label==='見逃し') b.classList.add('k-looking');
