@@ -1307,10 +1307,12 @@ body.member-screen:not(.member-gesture-lock){overflow-y:visible!important;oversc
 #game.screen button.scorer-question:focus-visible{outline:3px solid #fff;outline-offset:2px}
 </style>
 <style>
-#game .foulOutTarget1771{position:absolute;top:73%;transform:translate(-50%,-50%);width:72px;height:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:2px dashed #a3e5bb;border-radius:8px;background:#145631;color:#fff;font-size:11px;font-weight:800;z-index:110;pointer-events:none;user-select:none}
+#game .foulOutTarget1771{position:absolute;top:73%;transform:translate(-50%,-50%);width:34px;height:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:2px dashed #a3e5bb;border-radius:50%;background:#145631;color:#fff;font-size:11px;font-weight:800;z-index:110;pointer-events:none;user-select:none}
 #choice .foulOutPrompt1771{grid-column:1/-1;width:100%;font-weight:800;text-align:center}
-#game #choice.on:not(.warningModal):has(.foulOutPrompt1771){position:fixed!important;inset:auto 8px 12px!important;height:auto!important;max-height:none!important;z-index:600;padding:10px!important;box-shadow:0 4px 22px #0008!important}
-#game #choice.on:has(.foulOutPrompt1771) button{min-height:44px!important}
+#game #choice.on:not(.warningModal):has(.foulOutPrompt1771){position:absolute!important;inset:0 0 auto!important;margin:0!important;height:auto!important;max-height:none!important;z-index:600;padding:8px!important;box-shadow:0 4px 12px #0006!important}
+#game #choice.on:has(.foulOutPrompt1771) button{min-height:36px!important}
+#game .rightPanel:has(.foulOutPrompt1771){position:relative}
+#game .rightPanel:has(#choice.on .foulOutPrompt1771),#game .playStageArea:has(#choice.on .foulOutPrompt1771){overflow:visible!important}
 </style>
 </head><body>
 <dialog id="recordsResetDialog163" aria-labelledby="recordsResetMessage163" style="box-sizing:border-box;width:calc(100% - 32px);max-width:420px;border:2px solid #a61919;border-radius:12px;padding:20px">
@@ -1367,7 +1369,7 @@ body.member-screen:not(.member-gesture-lock){overflow-y:visible!important;oversc
 </svg>
  <div id="fielderLayer" class="fielderLayer" aria-label="守備位置"></div>
  <div id="r1" class="runner" style="left:68.75%;top:66.9%">1</div><div id="r2" class="runner" style="left:50%;top:43.8%">2</div><div id="r3" class="runner" style="left:31.25%;top:66.9%">3</div>
- <div class="foulOutTarget1771" data-foul-side="三塁側" style="left:11%">ファールOUT</div><div class="foulOutTarget1771" data-foul-side="一塁側" style="left:89%">ファールOUT</div>
+ <div class="foulOutTarget1771" data-foul-side="三塁側" style="left:11%" title="ファウルOUT：ボールをここへドロップ" aria-label="ファウルOUT">F</div><div class="foulOutTarget1771" data-foul-side="一塁側" style="left:89%" title="ファウルOUT：ボールをここへドロップ" aria-label="ファウルOUT">F</div>
  <button id="battedBallControl" type="button" aria-label="ボールをドラッグして打球方向を指定" aria-disabled="false" title="ボールをドラッグして打球方向を指定"><span class="ball-face" aria-hidden="true">⚾</span></button>
  <div id="pendingBatter" class="pendingBatter"></div>
  <button id="dpSuggestBtn" class="scorer-question" type="button" style="display:none;position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:205;background:#111;color:#fff;border:3px solid #ffd43b;border-radius:14px;padding:10px 18px;font-weight:900;font-size:16px;box-shadow:0 3px 10px #0007;pointer-events:auto!important;touch-action:manipulation!important;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:rgba(255,212,59,.28)">併殺</button>
